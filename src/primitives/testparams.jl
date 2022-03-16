@@ -11,14 +11,6 @@ testparams(d::AbstractMeasure) = testvalue(d)
     return _testparams(getmoduletypencoding(m), m, argvals(c))
 end
 
-function testparams(d::ModelClosure, N::Int)
-    r = chainvec(testparams(d), N)
-    for j in 2:N
-        @inbounds r[j] = testparams(d)
-    end
-    return r
-end
-
 @inline function testparams(m::ModelClosure; kwargs...) 
     testparams(m; kwargs...)
 end
