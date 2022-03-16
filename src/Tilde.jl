@@ -1,5 +1,157 @@
 module Tilde
 
-# Write your package code here.
+import Base.rand
+using Random
+using Reexport: @reexport
 
+@reexport using StatsFuns
+@reexport using MeasureTheory
+using MeasureBase: productmeasure, Returns
+
+import DensityInterface: logdensityof
+import DensityInterface: densityof
+import DensityInterface: DensityKind
+using DensityInterface
+
+
+using NamedTupleTools
+using SampleChains
+# using SymbolicCodegen
+
+# using SymbolicUtils: Symbolic
+# const MaybeSym{T} = Union{T, Symbolic{T}}
+
+# MeasureTheory.For(f, dims::MaybeSym{<: Integer}...) = ProductMeasure(mappedarray(i -> f(Tuple(i)...), CartesianIndices(dims))) 
+# MeasureTheory.For(f, dims::MaybeSym{<: AbstractUnitRange}...) = ProductMeasure(mappedarray(i -> f(Tuple(i)...), CartesianIndices(dims))) 
+
+import MacroTools: prewalk, postwalk, @q, striplines, replace, @capture
+import MacroTools
+import MLStyle
+# import MonteCarloMeasurements
+# using MonteCarloMeasurements: Particles, StaticParticles, AbstractParticles
+
+using Requires
+using ArrayInterface: StaticInt
+using Static
+
+using IfElse: ifelse
+using TransformVariables: as, asℝ, as𝕀, asℝ₊
+import TransformVariables as TV
+
+# using SimplePosets: SimplePoset
+# import SimplePosets
+
+
+using GeneralizedGenerated
+using RuntimeGeneratedFunctions
+RuntimeGeneratedFunctions.init(@__MODULE__)
+using MeasureBase: AbstractKleisli
+
+
+using NestedTuples: TypelevelExpr
+
+using MeasureTheory: ∞
+import MeasureTheory: xform
+
+
+"""
+we use this to avoid introduce static type parameters
+for generated functions
+"""
+_unwrap_type(a::Type{<:Type}) = a.parameters[1]
+
+export model, Model, tilde, @model
+
+using MLStyle
+# include("callify.jl")
+import GeneralizedGenerated as GG
+
+@generated function MeasureTheory.For(f::GG.Closure{F,Free}, inds::I) where {F,Free,I<:Tuple}
+    freetypes = Free.types
+    eltypes = eltype.(I.types)
+    T = Core.Compiler.return_type(F, Tuple{freetypes..., eltypes...})
+    quote
+        $(Expr(:meta, :inline))
+        For{$T,GG.Closure{F,Free},I}(f, inds)
+    end
 end
+
+include("tildeargs.jl")
+include("optics.jl")
+include("maybe.jl")
+# include("noted.jl")
+include("core/models/abstractmodel.jl")
+# include("core/models/dagmodel/statement.jl")
+include("core/models/astmodel/astmodel.jl")
+# include("core/models/dagmodel/dagmodel.jl")
+include("core/models/model.jl")
+# include("core/canonical.jl")
+include("core/dependencies.jl")
+# include("core/toposort.jl")
+# include("core/weighted.jl")
+include("core/utils.jl")
+include("core/models/closure.jl")
+include("core/models/posterior.jl")
+include("primitives/interpret.jl")
+# include("distributions/dist.jl")
+# include("distributions/for.jl")
+include("distributions/iid.jl")
+# include("distributions/mix.jl")
+# include("distributions/flat.jl")
+# include("distributions/markovchain.jl")
+
+include("primitives/rand.jl")
+# include("primitives/simulate.jl")
+include("primitives/logdensity.jl")
+# include("primitives/xform.jl")
+# include("primitives/likelihood-weighting.jl")
+include("primitives/insupport.jl")
+# include("primitives/gg.jl")
+# @init @require Bijectors="76274a88-744f-5084-9051-94815aaf08c4" begin
+#     include("primitives/bijectors.jl")
+# end
+
+# include("primitives/basemeasure.jl")
+include("primitives/testvalue.jl")
+include("primitives/testparams.jl")
+# include("primitives/entropy.jl")
+
+
+include("transforms/predict.jl")
+# include("transforms/markovblanket.jl")
+include("transforms/utils.jl")
+# include("transforms/basictransforms.jl")
+# include("transforms/withmeasures.jl")
+
+# include("symbolic/symcall.jl")
+# include("symbolic/symify.jl")
+# include("symbolic/rules.jl")
+# include("symbolic/symbolic.jl")
+# include("symbolic/codegen.jl")
+
+# include("particles.jl")
+include("plots.jl")
+
+# include("inference/rejection.jl")
+# include("inference/dynamicHMC.jl")
+# include("inference/advancedhmc.jl")
+# include("inference/power-posterior.jl")
+# include("inference/Δlogdensity.jl")
+
+#
+# # include("graph.jl")
+# # # include("optim.jl")
+# include("importance.jl")
+#
+
+
+function __init__()
+    @require SampleChainsDynamicHMC = "6d9fd711-e8b2-4778-9c70-c1dfb499d4c4" begin
+        include("samplechains/dynamichmc.jl")
+    end
+end
+
+# # # include("sobols.jl")
+# # # include("fromcube.jl")
+# # # include("tocube.jl")
+end # module
