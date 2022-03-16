@@ -4,11 +4,7 @@ CurrentModule = Tilde
 
 # Tilde
 
-Documentation for [Tilde](https://github.com/cscherrer/Tilde.jl).
+[Tilde](https://github.com/cscherrer/Tilde.jl)
+is a library for _probabilistic programming_.
 
-```@index
-```
-
-```@autodocs
-Modules = [Tilde]
-```
+The source code is available in the [GitHub repository](https://github.com/cscherrer/Tilde.jl).
