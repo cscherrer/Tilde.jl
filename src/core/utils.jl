@@ -316,6 +316,11 @@ end
 
 const TypeLevel = GeneralizedGenerated.TypeLevel
 
+export drop_return
+
+function drop_return(m::Model)
+    Model(getmodule(m), arguments(m), drop_return(body(m)))
+end
 
 function drop_return(ast)
     leaf(x) = x
@@ -323,7 +328,7 @@ function drop_return(ast)
         head === :return && return nothing
         return Expr(head, map(f, args)...)
     end
-    foldast(leaf, branch)(ast)
+    foldast(leaf, branch)(ast) 
 end
 
 function isleaf(m, v::Symbol)
