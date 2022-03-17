@@ -36,7 +36,7 @@ TupleVectors = "615932cf-77b6-4358-adcd-5b7eba981d7e"
 
 [compat]
 Accessors = "0.1"
-ArrayInterface = "3,4"
+ArrayInterface = "3,4, 5"
 DensityInterface = "0.4"
 DiffResults = "1"
 GeneralizedGenerated = "0.3.3"
