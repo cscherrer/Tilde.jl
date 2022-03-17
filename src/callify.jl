@@ -34,9 +34,36 @@ function callify(mycall, ast)
     foldast(leaf, branch)(ast)
 end
 
-macro call(expr)
-    callify(expr)
-end
+# struct Provenance{T,S}
+#     value::T
+#     sources::S
+# end
+
+# getvalue(p::Provenance) = p.value
+# getvalue(x) = x
+
+# getsources(p::Provenance) = p.sources
+# getsources(x) = Set()
+
+# function trace_provenance(f, args...; kwargs...)
+#     (newargs, arg_sources) = (getvalue.(args), union(getsources.(args)...))
+
+#     k = keys(kwargs)
+#     v = values(kwargs)
+#     newkwargs = NamedTuple{k}(map(getvalue, v))
+
+#     k = keys(kwargs)
+#     v = values(NamedTuple(kwargs))
+#     newkwargs = NamedTuple{k}(getvalue.(v))
+#     kwarg_sources = union(getsources.(args)...)
+
+#     sources = union(arg_sources, kwarg_sources)
+#     Provenance(f(newargs...; newkwargs), sources)
+# end
+
+# macro call(expr)
+#     callify(expr)
+# end
 
 
 # julia> callify(:(f(g(x,y))))
