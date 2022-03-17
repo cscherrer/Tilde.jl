@@ -63,7 +63,7 @@ _unwrap_type(a::Type{<:Type}) = a.parameters[1]
 export model, Model, tilde, @model
 
 using MLStyle
-# include("callify.jl")
+include("callify.jl")
 import GeneralizedGenerated as GG
 
 @generated function MeasureTheory.For(f::GG.Closure{F,Free}, inds::I) where {F,Free,I<:Tuple}

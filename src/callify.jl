@@ -1,41 +1,37 @@
 using MLStyle
 
-function foldast(leaf, branch; kwargs...)
-    function go(ast)
-        MLStyle.@match ast begin
-            Expr(head, args...) => branch(head, map(go, args); kwargs...)
-            x                   => leaf(x; kwargs...)
-        end
-    end
+"""
+    callify(mycall, ast)
 
-    return go
-end
-
-
-function matchcall(expr)
-    @match expr begin
-        Expr(:call, f, Expr(:parameters, kwargs...), args...) => (f, args, kwargs)
-        Expr(:call, f, args...) => (f,args, [])
-        _ => @error "matchcall called on $expr, not a function call"
-    end
-end
-
-function callify(expr; call=:call)
+Replace every `f(args...; kwargs..)` with `mycall(f, args...; kwargs...)` 
+"""
+function callify(mycall, ast)
     leaf(x) = x
-    branch(head, newargs) = begin
-        expr = Expr(head, newargs...)
+    function branch(f, head, args)
+        default() = Expr(head, map(f, args)...)
+        head == :call || return default()
 
-        # If it's not a function call, just return it as-is
-        head == :call || return expr
-            
-        (f, args, kwargs) = matchcall(expr)
+        if first(args) == :~ && length(args) == 3
+            return default()
+        end
 
-        isempty(kwargs) && return Expr(:call, call, f, args...)
+        # At this point we know it's a function call
+        length(args) == 1 && return Expr(:call, mycall, first(args))
 
-        return Expr(:call, call, Expr(:parameters, kwargs...), f, args...)
+        fun = args[1]
+        arg2 = args[2]
+
+        if arg2 isa Expr && arg2.head == :parameters
+            # keyword arguments (try dump(:(f(x,y;a=1, b=2))) to see this)
+            return Expr(:call, mycall, arg2, fun, map(f, Base.rest(args, 3))...)
+        else
+            return Expr(:call, mycall, map(f, args)...)
+        end
+
+        
     end
 
-    foldast(leaf, branch)(expr)
+    foldast(leaf, branch)(ast)
 end
 
 macro call(expr)
