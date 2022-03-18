@@ -5,6 +5,8 @@
 [![Build Status](https://github.com/cscherrer/Tilde.jl/actions/workflows/CI.yml/badge.svg?branch=main)](https://github.com/cscherrer/Tilde.jl/actions/workflows/CI.yml?query=branch%3Amain)
 [![Coverage](https://codecov.io/gh/cscherrer/Tilde.jl/branch/main/graph/badge.svg)](https://codecov.io/gh/cscherrer/Tilde.jl)
 
+WIP, successor to [Soss.jl](https://github.com/cscherrer/Soss.jl)
+
 ```julia
 julia> m = @model (x, s) begin
         σ ~ Exponential()
