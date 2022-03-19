@@ -271,7 +271,7 @@ end
 getntkeys(::NamedTuple{A,B}) where {A,B} = A
 getntkeys(::Type{NamedTuple{A,B}}) where {A,B} = A
 getntkeys(::Type{NamedTuple{A}}) where {A} = A
-getntkeys(::Type{LazyMerge{A,B,S,T}}) where {A,B,S,T} = Tuple(A ∪ B)
+getntkeys(::Type{LazyMerge{X,Y}}) where {X,Y} = Tuple(getntkeys(X) ∪ getntkeys(Y))
 
 
 # These macros quickly define additional methods for when you get tired of typing `NamedTuple()`
