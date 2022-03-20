@@ -19,7 +19,7 @@ end
 
 @inline function tilde(::typeof(unsafe_logdensityof), lens, xname, x, d, cfg, ctx::NamedTuple)
     lm = lazymerge(cfg.obs, cfg.pars)
-    x = getproperty(lm, xname)
+    x = NestedTuples._get(lm, xname)
     # x =get(lm, xname)
     @reset ctx.ℓ += MeasureBase.unsafe_logdensityof(d, lens(x))
     (x, ctx, ctx.ℓ)
