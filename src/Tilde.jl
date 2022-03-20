@@ -91,16 +91,12 @@ include("distributions/iid.jl")
 include("primitives/rand.jl")
 include("primitives/logdensity.jl")
 include("primitives/insupport.jl")
-# @init @require Bijectors="76274a88-744f-5084-9051-94815aaf08c4" begin
-#     include("primitives/bijectors.jl")
-# end
 
 # include("primitives/basemeasure.jl")
 include("primitives/testvalue.jl")
 include("primitives/testparams.jl")
 
 
-include("transforms/predict.jl")
 include("transforms/utils.jl")
 
 function __init__()

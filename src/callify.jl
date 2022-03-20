@@ -78,12 +78,6 @@ end
 # julia> callify(:(call(f,3)))
 # :(call(f, 3))
 
-function symcall(f, args...; kwargs...)
-    hasmethod(f, typeof.(args), keys(kwargs)) && return f(args...; kwargs...)
-
-    term(f, args...)
-end
-
 # f(x) = x+1
 
 # @call f(2)

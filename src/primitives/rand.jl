@@ -46,12 +46,12 @@ end
 
 @inline function tilde(::typeof(Base.rand), lens::typeof(identity), xname, x, d, cfg, ctx::Dict)
     x = rand(cfg.rng, d)
-    ctx[vname] = x 
+    ctx[dynamic(xname)] = x 
     (x, ctx, ctx)
 end
 
 @inline function tilde(::typeof(Base.rand), lens, xname, x, d::AbstractConditionalModel, cfg, ctx::Dict)
-    args = get(cfg.args, v, Dict())
+    args = get(cfg.args, dynamic(xname), Dict())
     cfg = merge(cfg, (args = args,))
     tilde(rand, lens, xname, x, d(cfg.args), cfg, ctx)
 end
