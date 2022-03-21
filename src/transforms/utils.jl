@@ -59,5 +59,3 @@
 #     end
 #     return m
 # end
-
-getReturn(am::AbstractModel) =model(am).retn

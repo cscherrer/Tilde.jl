@@ -148,29 +148,6 @@ allequal(xs) = all(xs[1] .== xs)
 # # julia> as((;s=as(Array, as𝕀,4), a=asℝ))(randn(5))
 # # (s = [0.545324, 0.281332, 0.418541, 0.485946], a = 2.217762640580984)
 
-function buildSource(m, proc, wrap=identity; kwargs...)
-
-    kernel = @q begin end
-
-    for st in map(v -> findStatement(m,v), toposort(m))
-        ex = proc(m, st; kwargs...)
-        isnothing(ex) || push!(kernel.args, ex)
-    end
-
-
-    isnothing(m.retn) || push!(kernel.args, proc(m, Return(m.retn); kwargs...))
-    # args = argtuple(m)
-
-    # body = @q begin
-    #     function $basename($args; kwargs...)
-    #         $(wrap(kernel))
-    #     end
-    # end
-
-    wrap(kernel) |> MacroTools.flatten
-    # flatten(body)
-end
-
 # From https://github.com/thautwarm/MLStyle.jl/issues/66
 @active LamExpr(x) begin
            @match x begin
@@ -205,17 +182,17 @@ end
 getprototype(::Type{NamedTuple{N,T} where {T <: Tuple} } ) where {N} = NamedTuple{N}
 getprototype(::NamedTuple{N,T} where {T<: Tuple} ) where N = NamedTuple{N}
 
-function loadvals(argstype, datatype)
+function loadvals(argstype, obstype)
     args = getntkeys(argstype)
-    data = getntkeys(datatype)
+    obs = getntkeys(obstype)
     loader = @q begin
     end
 
     for k in args
         push!(loader.args, :($k = _args.$k))
     end
-    for k in data
-        push!(loader.args, :($k = _data.$k))
+    for k in obs
+        push!(loader.args, :($k = _obs.$k))
     end
 
     src -> (@q begin
@@ -271,23 +248,7 @@ end
 getntkeys(::NamedTuple{A,B}) where {A,B} = A
 getntkeys(::Type{NamedTuple{A,B}}) where {A,B} = A
 getntkeys(::Type{NamedTuple{A}}) where {A} = A
-getntkeys(::Type{LazyMerge{A,B,S,T}}) where {A,B,S,T} = Tuple(A ∪ B)
-
-
-# These macros quickly define additional methods for when you get tired of typing `NamedTuple()`
-macro tuple3args(f)
-    quote
-        $f(m::DAGModel, (), data) = $f(m::DAGModel, NamedTuple(), data)
-        $f(m::DAGModel, args, ()) = $f(m::DAGModel, args, NamedTuple())
-        $f(m::DAGModel, (), ())   = $f(m::DAGModel, NamedTuple(), NamedTuple())
-    end
-end
-
-macro tuple2args(f)
-    quote
-        $f(m::DAGModel, ()) = $f(m::DAGModel, NamedTuple())
-    end
-end
+getntkeys(::Type{LazyMerge{X,Y}}) where {X,Y} = Tuple(getntkeys(X) ∪ getntkeys(Y))
 
 
 # This is just handy for REPLing, no direct connection to Tilde
@@ -301,21 +262,13 @@ end
 #  Number
 #  Any
 
-export tower
-
-function tower(x)
-    t0 = typeof(x)
-    result = [t0]
-    t1 = supertype(t0)
-    while t1 ≠ t0
-        push!(result, t1)
-        t0, t1 = t1, supertype(t1)
-    end
-    return result
-end
-
 const TypeLevel = GeneralizedGenerated.TypeLevel
 
+export drop_return
+
+function drop_return(m::Model)
+    Model(getmodule(m), arguments(m), drop_return(body(m)))
+end
 
 function drop_return(ast)
     leaf(x) = x
@@ -323,11 +276,7 @@ function drop_return(ast)
         head === :return && return nothing
         return Expr(head, map(f, args)...)
     end
-    foldast(leaf, branch)(ast)
-end
-
-function isleaf(m, v::Symbol)
-    isempty(digraph(m).N[v])
+    foldast(leaf, branch)(ast) 
 end
 
 export unVal

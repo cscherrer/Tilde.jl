@@ -39,16 +39,3 @@ export insupport
 
 # # MeasureTheory.insupport(d::Distribution, val, tr) = logdensityof(d, val)
 
-
-# @gg function _insupport(M::Type{<:TypeLevel}, _m::AbstractModel, _args, _data, _pars)
-#     body = type2model(_m) |> sourceInsupport() |> loadvals(_args, _data, _pars)
-#     @under_global from_type(_unwrap_type(M)) @q let M
-#         $body
-#     end
-# end
-
-function tilde_insupport(v, d, cfg, ctx, targs::TildeArgs{X,M,V}) where {X,M,V}
-    x = getproperty(lazymerge(ctx.args, ctx.obs, ctx.pars), v)
-    retn = insupport(d,x) ? true : ReturnNow(false)
-    (x, ctx, retn)
-end
