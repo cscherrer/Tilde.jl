@@ -20,9 +20,9 @@ Base.rand(d::ModelClosure, N::Int) = rand(GLOBAL_RNG, d, N)
 end
 
 
-@inline function Base.rand(rng::AbstractRNG, mc::ModelClosure; cfg = NamedTuple(), ctx=NamedTuple())
+@inline function Base.rand(rng::AbstractRNG, m::ModelClosure; cfg = NamedTuple(), ctx=NamedTuple())
     cfg′ = merge(cfg, (rng=rng,))
-    gg_call(mc, rand, cfg′, ctx, KeepReturn())
+    gg_call(m, rand, cfg′, ctx, KeepReturn())
 end
 
 ###############################################################################
@@ -50,10 +50,10 @@ end
     (x, ctx, ctx)
 end
 
-@inline function tilde(::typeof(Base.rand), lens, xname, x, d::AbstractConditionalModel, cfg, ctx::Dict)
+@inline function tilde(::typeof(Base.rand), lens, xname, x, m::AbstractConditionalModel, cfg, ctx::Dict)
     args = get(cfg.args, dynamic(xname), Dict())
     cfg = merge(cfg, (args = args,))
-    tilde(rand, lens, xname, x, d(cfg.args), cfg, ctx)
+    tilde(rand, lens, xname, x, m(cfg.args), cfg, ctx)
 end
 
 ###############################################################################
