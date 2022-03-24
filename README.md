@@ -7,6 +7,8 @@
 
 WIP, successor to [Soss.jl](https://github.com/cscherrer/Soss.jl)
 
+For a high-level description of Tilde's design, check out [this blog post](https://informativeprior.com/blog/2022/03-21-tilde/)
+
 ```julia
 julia> m = @model (x, s) begin
         σ ~ Exponential()
