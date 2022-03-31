@@ -115,14 +115,13 @@ using Tilde
 
 mh_step = @model target, proposal, x begin
     xᵒ ~ proposal(x)
-    basemeasure(target) == basemeasure(proposal(x)) || ArgumentError("Mismatch of base measures")
+    basemeasure(target) == basemeasure(proposal(x)) || throw(ArgumentError("Mismatch of base measures"))
 
     a = logdensity_def(target, xᵒ) - logdensity_def(target, x)
     a += logdensity_def(proposal(xᵒ), x) - logdensity_def(proposal(x), xᵒ)
     accept ~ Bernoulli(min(1, exp(a)))
     return ifelse(accept, xᵒ, x)
 end
-
 # use Metropolis assuming proposal has detailed balance with respect to base
 db_mh_step = @model target, base, proposal, x begin
     xᵒ ~ proposal(x)
