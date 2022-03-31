@@ -122,11 +122,12 @@ mh_step = @model target, proposal, x begin
     accept ~ Bernoulli(min(1, exp(a)))
     return ifelse(accept, xᵒ, x)
 end
-# use Metropolis assuming proposal has detailed balance with respect to base
-db_mh_step = @model target, base, proposal, x begin
+
+# use Metropolis assuming proposal has detailed balance with respect to an `invariant` measure and `target` a density with respect to `invariant`
+db_mh_step = @model target, invariant, proposal, x begin
     xᵒ ~ proposal(x)
-    # @assert that proposal has detailed balance for base
-    a = logdensity_rel(target, base, xᵒ) - logdensity_rel(target, base, x)
+    # @assert that proposal has detailed balance for the invariant measure `invariant`
+    a = logdensity_rel(target, invariant, xᵒ) - logdensity_rel(target, invariant, x)
     accept ~ Bernoulli(min(1, exp(a)))
     return ifelse(accept, xᵒ, x)
 end
