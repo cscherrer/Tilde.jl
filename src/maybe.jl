@@ -8,6 +8,9 @@ Maybe{T} = Union{None, Just{T}} where {T}
 maybe(f, m::None, default) = default
 maybe(f, m::Just, default) = f(m.value) 
 
+maybe(f, ::Missing, default) = default
+maybe(f, x, default) = f(x)
+
 isJust(::None) = false
 isJust(::Just) = true
 
