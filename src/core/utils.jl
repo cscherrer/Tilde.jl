@@ -73,13 +73,8 @@ export foldast
 
 
 function foldast(leaf, branch; kwargs...)
-    @inline function f(ast::Expr; kwargs...)
-        MLStyle.@match ast begin
-            Expr(head, args...) => branch(f, head, args; kwargs...)
-        end
-    end
-    f(x; kwargs...) = leaf(x; kwargs...)
-
+    @inline f(ast::Expr; kwargs...) = branch(f, ast.head, ast.args; kwargs...)
+    @inline f(x; kwargs...) = leaf(x; kwargs...)
     return f
 end
 
