@@ -28,13 +28,13 @@ end
 ###############################################################################
 # ctx::NamedTuple
 
-@inline function tilde(::typeof(Base.rand), lens::typeof(identity), xname, x, d, cfg, ctx::NamedTuple)
+@inline function tilde(::typeof(Base.rand), lens::typeof(identity), xname, x, d, cfg, ctx::NamedTuple, _, _)
     xnew = rand(cfg.rng, d)
     ctx′ = merge(ctx, NamedTuple{(dynamic(xname),)}((xnew,)))
     (xnew, ctx′, ctx′)
 end
 
-@inline function tilde(::typeof(Base.rand), lens, xname, x, d, cfg, ctx::NamedTuple)
+@inline function tilde(::typeof(Base.rand), lens, xname, x, d, cfg, ctx::NamedTuple, _, _)
     xnew = set(x, Lens!!(lens), rand(cfg.rng, d))
     ctx′ = merge(ctx, NamedTuple{(dynamic(xname),)}((xnew,)))
     (xnew, ctx′, ctx′)

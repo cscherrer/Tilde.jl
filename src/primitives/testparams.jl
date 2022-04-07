@@ -13,13 +13,13 @@ end
 ###############################################################################
 # ctx::NamedTuple
 
-@inline function tilde(::typeof(testparams), lens::typeof(identity), xname, x, d, cfg, ctx::NamedTuple)
+@inline function tilde(::typeof(testparams), lens::typeof(identity), xname, x, d, cfg, ctx::NamedTuple, _, _)
     xnew = testparams(d)
     ctx′ = merge(ctx, NamedTuple{(dynamic(xname),)}((xnew,)))
     (xnew, ctx′, ctx′)
 end
 
-@inline function tilde(::typeof(testparams), lens, xname, x, d, cfg, ctx::NamedTuple)
+@inline function tilde(::typeof(testparams), lens, xname, x, d, cfg, ctx::NamedTuple, _, _)
     xnew = set(x, Lens!!(lens), testparams(d))
     ctx′ = merge(ctx, NamedTuple{(dynamic(xname),)}((xnew,)))
     (xnew, ctx′, ctx′)

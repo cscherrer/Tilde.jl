@@ -1,5 +1,10 @@
 export interpret
 
+
+@inline function inkeys(::StaticSymbol{s}, ::Type{NamedTuple{N, T}}) where {s,N,T}
+    return static(s ∈ N)
+end
+
 function interpret(m::Model{A,B,M}, tilde, ctx0) where {A,B,M}
     theModule = getmodule(m)
     mk_function(theModule, make_body(theModule, m.body, tilde, ctx0))
@@ -9,12 +14,12 @@ function make_body(M, f, m::AbstractModel)
     make_body(M, body(m))
 end
 
-function make_body(M, f, ast::Expr, return_action)
+function make_body(M, f, ast::Expr, return_action, argsT, obsT)
     function go(ex, scope=(bounds = Var[], freevars = Var[], bound_inits = Symbol[]))
         @match ex begin
             :(($x, $l) ~ $rhs) => begin
-                varnames = Tuple(locals(l)) # ∪ locals(rhs))
-                varvals = Expr(:tuple, varnames...)
+                # varnames = Tuple(locals(l)) # ∪ locals(rhs))
+                # varvals = Expr(:tuple, varnames...)
 
                 x = unsolve(x)
                 l = unsolve(l)
@@ -27,12 +32,14 @@ function make_body(M, f, ast::Expr, return_action)
                 # x == unsolved_lhs && delete!(varnames, x)
 
                 sx = static(x)
+                inargs = inkeys(sx, argsT)
+                inobs = inkeys(sx, obsT)
                 # X = to_type(unsolved_lhs)
-                M = to_type(unsolve(rhs))
+                # M = to_type(unsolve(rhs))
             
                 q = quote
-                    __old_x = $l == identity ? nothing : $x
-                    ($x, _ctx, _retn) = $tilde($f, $l, $sx, __old_x, $rhs, _cfg, _ctx)
+                    __old_x = $l == identity ? missing : $x
+                    ($x, _ctx, _retn) = $tilde($f, $l, $sx, __old_x, $rhs, _cfg, _ctx, $inargs, $inobs)
                     _retn isa Tilde.ReturnNow && return _retn.value
                 end
 
@@ -74,19 +81,18 @@ struct DropReturn end
 struct KeepReturn end
 
 
-
 @generated function gg_call(_mc::MC, ::F, _cfg, _ctx, R) where {MC, F}
     _m = type2model(MC)
     M = getmodule(_m)
 
-    _args = argvalstype(MC)
-    _obs = obstype(MC)
+    argsT = argvalstype(MC)
+    obsT = obstype(MC)
 
-    body = _m.body |> loadvals(_args, _obs)
+    body = _m.body |> loadvals(argsT, obsT)
 
     f = MeasureBase.instance(F)
     return_action = MeasureBase.instance(R)
-    body = make_body(M, f, body, return_action)
+    body = make_body(M, f, body, return_action, argsT, obsT)
 
     q = MacroTools.flatten(@q function (_mc, _cfg, _ctx)
             local _retn

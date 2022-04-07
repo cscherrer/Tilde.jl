@@ -17,7 +17,7 @@ end
     gg_call(cm, unsafe_logdensityof, cfg, ctx, DropReturn())
 end
 
-@inline function tilde(::typeof(unsafe_logdensityof), lens, xname, x, d, cfg, ctx::NamedTuple)
+@inline function tilde(::typeof(unsafe_logdensityof), lens, xname, x, d, cfg, ctx::NamedTuple, _, _)
     lm = lazymerge(cfg.obs, cfg.pars)
     x = NestedTuples._get(lm, xname)
     # x =get(lm, xname)
