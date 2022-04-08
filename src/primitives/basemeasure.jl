@@ -1,3 +1,5 @@
+import MeasureBase: basemeasure
+
 @inline function basemeasure(m::AbstractConditionalModel, pars; ctx=NamedTuple())
     cfg = (pars=pars,)
     gg_call(m, basemeasure, cfg, ctx, DropReturn())
