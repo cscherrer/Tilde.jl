@@ -13,7 +13,7 @@ end
 
 @inline function MeasureBase.unsafe_logdensityof(cm::AbstractConditionalModel, pars::NamedTuple; cfg=NamedTuple(), ctx=NamedTuple())
     cfg = merge(cfg, (pars=pars,))
-    ctx = merge(ctx, (ℓ = partialstatic(0.0),))
+    ctx = merge(ctx, (ℓ = 0.0,))
     gg_call(cm, unsafe_logdensityof, cfg, ctx, DropReturn())
 end
 
