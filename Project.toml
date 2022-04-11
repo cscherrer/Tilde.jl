@@ -33,6 +33,8 @@ StatsBase = "2913bbd2-ae8a-5f71-8c99-4fb6c76f3a91"
 StatsFuns = "4c63d2b9-4356-54db-8cca-17b64c39e42c"
 TransformVariables = "84d833dd-6860-57f9-a1a7-6da5db126cff"
 TupleVectors = "615932cf-77b6-4358-adcd-5b7eba981d7e"
+Umlaut = "92992a2b-8ce5-4a9c-bb9d-58be9a7dc841"
+Yota = "cd998857-8626-517d-b929-70ad188a48f0"
 
 [compat]
 Accessors = "0.1"
