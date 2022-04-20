@@ -14,6 +14,15 @@ function make_body(M, f, m::AbstractModel)
     make_body(M, body(m))
 end
 
+struct Observed{T}
+    value::T
+end
+
+struct Unobserved{T}
+    value::T
+end
+
+
 function make_body(M, f, ast::Expr, retfun, argsT, obsT, parsT) 
     knownvars = union(keys.(schema.((argsT, obsT, parsT)))...)
     function go(ex, scope=(bounds = Var[], freevars = Var[], bound_inits = Symbol[]))
@@ -41,7 +50,7 @@ function make_body(M, f, ast::Expr, retfun, argsT, obsT, parsT)
                 inpars = inkeys(sx, parsT)
                 rhs = unsolve(rhs)
                 
-                xval = x ∈ knownvars ? x : missing
+                xval = inobs ? :($Observed($x)) : (x ∈ knownvars ? :($Unobserved($x)) : :($Unobserved(missing)))
                 st = :(($x, _ctx, _retn) = $tilde($f, $l, $sx, $xval, $rhs, _cfg, _ctx))
                 qst = QuoteNode(st)
                 q = quote
