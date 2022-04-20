@@ -15,6 +15,7 @@ function make_body(M, f, m::AbstractModel)
 end
 
 function make_body(M, f, ast::Expr, retfun, argsT, obsT, parsT) 
+    knownvars = union(keys.(schema.((argsT, obsT, parsT)))...)
     function go(ex, scope=(bounds = Var[], freevars = Var[], bound_inits = Symbol[]))
         @match ex begin
             :(($x, $l) ~ $rhs) => begin
@@ -40,7 +41,8 @@ function make_body(M, f, ast::Expr, retfun, argsT, obsT, parsT)
                 inpars = inkeys(sx, parsT)
                 rhs = unsolve(rhs)
                 
-                st = :(($x, _ctx, _retn) = $tilde($f, $l, $sx, $x, $rhs, _cfg, _ctx))
+                xval = x ∈ knownvars ? x : missing
+                st = :(($x, _ctx, _retn) = $tilde($f, $l, $sx, $xval, $rhs, _cfg, _ctx))
                 qst = QuoteNode(st)
                 q = quote
                     # println($qst)
@@ -90,10 +92,6 @@ end
 
     body = _m.body |> loadvals(argsT, obsT, parsT)
 
-    knownvars = union(keys.(schema.((argsT, obsT, parsT)))...)
-    for v in setdiff(parameters(_m), knownvars)
-        pushfirst!(body.args, :($v = missing))
-    end
     f = MeasureBase.instance(F)
     retfun = MeasureBase.instance(R)
     body = make_body(M, f, body, MeasureBase.instance(R), argsT, obsT, parsT)
