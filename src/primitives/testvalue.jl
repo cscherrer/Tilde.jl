@@ -6,7 +6,7 @@ export testvalue
 EmptyNTtype = NamedTuple{(),Tuple{}} where T<:Tuple
 
 @inline function testvalue(mc::ModelClosure; cfg = NamedTuple(), ctx=NamedTuple())
-    gg_call(mc, testvalue, cfg, ctx, KeepReturn())
+    gg_call(testvalue, mc, NamedTuple(), cfg, ctx, (r, ctx) -> r)
 end
 
 ###############################################################################

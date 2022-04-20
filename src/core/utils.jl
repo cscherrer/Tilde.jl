@@ -198,9 +198,9 @@ function loadvals(argstype, obstype)
     end) |> MacroTools.flatten
 end
 
-function loadvals(argstype, datatype, parstype)
+function loadvals(argstype, obstype, parstype)
     args = schema(argstype)
-    data = schema(datatype)
+    data = schema(obstype)
     pars = schema(parstype)
 
     loader = @q begin
@@ -216,7 +216,7 @@ function loadvals(argstype, datatype, parstype)
     end
     for k in setdiff(keys(data), keys(pars))
         T = getproperty(data, k)
-        push!(loader.args, :($k::$T = _data.$k))
+        push!(loader.args, :($k::$T = _obs.$k))
     end
 
     for k in setdiff(keys(pars), keys(data))
@@ -227,7 +227,7 @@ function loadvals(argstype, datatype, parstype)
     for k in keys(pars) ∩ keys(data)
         qk = QuoteNode(k)
         if typejoin(getproperty(pars, k), getproperty(data, k)) <: NamedTuple
-            push!(loader.args, :($k = Tilde.NestedTuples.lazymerge(_data.$k, _pars.$k)))
+            push!(loader.args, :($k = Tilde.NestedTuples.lazymerge(_obs.$k, _pars.$k)))
         else
             T = getproperty(pars, k)
             push!(loader.args, quote

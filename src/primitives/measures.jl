@@ -43,7 +43,7 @@ EXAMPLE
 """
 @inline function measures!(meas, m::AbstractConditionalModel, pars)
     ctx = meas
-    gg_call(measures!, m, pars, NamedTuple(), ctx, DropReturn())
+    gg_call(measures!, m, pars, NamedTuple(), ctx, (r, ctx) -> ctx)
 end
 
 @inline function tilde(::typeof(measures!), lens, xname, x, d, cfg, ctx)

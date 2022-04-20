@@ -14,7 +14,7 @@ function make_body(M, f, m::AbstractModel)
     make_body(M, body(m))
 end
 
-function make_body(M, f, ast::Expr, return_action, argsT, obsT, parsT) 
+function make_body(M, f, ast::Expr, retfun, argsT, obsT, parsT) 
     function go(ex, scope=(bounds = Var[], freevars = Var[], bound_inits = Symbol[]))
         @match ex begin
             :(($x, $l) ~ $rhs) => begin
@@ -51,6 +51,8 @@ function make_body(M, f, ast::Expr, return_action, argsT, obsT, parsT)
                 q
             end
 
+            :(return $r) => :(return $retfun($r, _ctx))
+            
             Expr(:scoped, new_scope, ex) => begin
                 go(ex, new_scope)
             end
@@ -59,10 +61,6 @@ function make_body(M, f, ast::Expr, return_action, argsT, obsT, parsT)
             
             x => x
         end
-    end
-
-    if return_action isa DropReturn
-        ast = drop_return(ast)
     end
 
     body = go(@q begin 
@@ -82,11 +80,7 @@ end
 # end
 
 
-struct DropReturn end
-struct KeepReturn end
-
-
-@generated function gg_call(::F, _mc::MC, _pars::NamedTuple{N,T}, _cfg, _ctx, R) where {F, MC, N, T}
+@generated function gg_call(::F, _mc::MC, _pars::NamedTuple{N,T}, _cfg, _ctx, ::R) where {F, MC, N, T, CB, R}
     _m = type2model(MC)
     M = getmodule(_m)
 
@@ -101,8 +95,8 @@ struct KeepReturn end
         pushfirst!(body.args, :($v = missing))
     end
     f = MeasureBase.instance(F)
-    return_action = MeasureBase.instance(R)
-    body = make_body(M, f, body, return_action, argsT, obsT, parsT)
+    retfun = MeasureBase.instance(R)
+    body = make_body(M, f, body, MeasureBase.instance(R), argsT, obsT, parsT)
 
     q = MacroTools.flatten(@q @inline function (_mc, _cfg, _ctx, _pars)
             local _retn
@@ -110,7 +104,8 @@ struct KeepReturn end
             _obs = Tilde.observations(_mc)
             _cfg = merge(_cfg, (args=_args, obs=_obs, pars=_pars))
             $body
-            _retn
+            # If body doesn't have a return, default to `return ctx`
+            $retfun(_ctx, _ctx)
         end)
 
     q = from_type(_get_gg_func_body(mk_function(M, q))) |> MacroTools.flatten
