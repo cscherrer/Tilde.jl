@@ -2,7 +2,7 @@ export interpret
 
 
 @inline function inkeys(::StaticSymbol{s}, ::Type{NamedTuple{N, T}}) where {s,N,T}
-    return static(s ∈ N)
+    return s ∈ N
 end
 
 function interpret(m::Model{A,B,M}, tilde, ctx0) where {A,B,M}
@@ -14,7 +14,7 @@ function make_body(M, f, m::AbstractModel)
     make_body(M, body(m))
 end
 
-function make_body(M, f, ast::Expr, return_action, argsT, obsT)
+function make_body(M, f, ast::Expr, return_action, argsT, obsT, parsT) 
     function go(ex, scope=(bounds = Var[], freevars = Var[], bound_inits = Symbol[]))
         @match ex begin
             :(($x, $l) ~ $rhs) => begin
@@ -30,16 +30,21 @@ function make_body(M, f, ast::Expr, return_action, argsT, obsT)
 
                 # unsolved_lhs = unsolve(lhs)
                 # x == unsolved_lhs && delete!(varnames, x)
-
+                qx = QuoteNode(x)
                 sx = static(x)
-                inargs = inkeys(sx, argsT)
-                inobs = inkeys(sx, obsT)
                 # X = to_type(unsolved_lhs)
                 # M = to_type(unsolve(rhs))
-            
+
+                inargs = inkeys(sx, argsT)
+                inobs = inkeys(sx, obsT)
+                inpars = inkeys(sx, parsT)
+                rhs = unsolve(rhs)
+                
+                st = :(($x, _ctx, _retn) = $tilde($f, $l, $sx, $x, $rhs, _cfg, _ctx))
+                qst = QuoteNode(st)
                 q = quote
-                    __old_x = $l == identity ? missing : $x
-                    ($x, _ctx, _retn) = $tilde($f, $l, $sx, __old_x, $rhs, _cfg, _ctx, $inargs, $inobs)
+                    # println($qst)
+                    $st
                     _retn isa Tilde.ReturnNow && return _retn.value
                 end
 
@@ -72,36 +77,47 @@ function _get_gg_func_body(::RuntimeFn{Args,Kwargs,Body}) where {Args,Kwargs,Bod
     Body
 end
 
-function _get_gg_func_body(ex)
-    error(ex)
-end
+# function _get_gg_func_body(ex)
+#     error(ex)
+# end
 
 
 struct DropReturn end
 struct KeepReturn end
 
 
-@generated function gg_call(_mc::MC, ::F, _cfg, _ctx, R) where {MC, F}
+@generated function gg_call(::F, _mc::MC, _pars::NamedTuple{N,T}, _cfg, _ctx, R) where {F, MC, N, T}
     _m = type2model(MC)
     M = getmodule(_m)
 
     argsT = argvalstype(MC)
     obsT = obstype(MC)
+    parsT = NamedTuple{N,T}
 
-    body = _m.body |> loadvals(argsT, obsT)
+    body = _m.body |> loadvals(argsT, obsT, parsT)
 
+    knownvars = union(keys.(schema.((argsT, obsT, parsT)))...)
+    for v in setdiff(parameters(_m), knownvars)
+        pushfirst!(body.args, :($v = missing))
+    end
     f = MeasureBase.instance(F)
     return_action = MeasureBase.instance(R)
-    body = make_body(M, f, body, return_action, argsT, obsT)
+    body = make_body(M, f, body, return_action, argsT, obsT, parsT)
 
-    q = MacroTools.flatten(@q function (_mc, _cfg, _ctx)
+    q = MacroTools.flatten(@q @inline function (_mc, _cfg, _ctx, _pars)
             local _retn
             _args = Tilde.argvals(_mc)
             _obs = Tilde.observations(_mc)
-            _cfg = merge(_cfg, (args=_args, obs=_obs))
+            _cfg = merge(_cfg, (args=_args, obs=_obs, pars=_pars))
             $body
             _retn
         end)
 
-    from_type(_get_gg_func_body(mk_function(M, q)))
+    q = from_type(_get_gg_func_body(mk_function(M, q))) |> MacroTools.flatten
+
+    quote
+        $(Expr(:meta, :inline))
+        $q
+        # println($(QuoteNode(q)))
+    end
 end

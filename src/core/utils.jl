@@ -26,6 +26,8 @@ arguments(m::AbstractModel) = model(m).args
 export parameters
 parameters(m::AbstractModel) = parameters(m.body)
 
+parameters(m::AbstractConditionalModel) = parameters(model(m))
+
 function parameters(ast)
     leaf(x) = Set{Symbol}()
     @inline function branch(f, head, args)
@@ -205,7 +207,10 @@ function loadvals(argstype, datatype, parstype)
 
     end
 
-    for k in keys(args)
+    for k in keys(args) ∪ keys(pars) ∪ keys(data)
+        push!(loader.args, :(local $k))
+    end
+    for k in setdiff(keys(args), keys(pars) ∪ keys(data))
         T = getproperty(args, k)
         push!(loader.args, :($k::$T = _args.$k))
     end
@@ -326,7 +331,7 @@ function solve_scope(m::AbstractModel)
 end
 
 function solve_scope(ex::Expr)
-    ex |> detilde |> simplify_ex  |> MacroTools.flatten  |> solve_from_local |> retilde
+    ex |> detilde |> simplify_ex  |> MacroTools.flatten  |> solve_from_local! |> retilde
 end
 
 function locally_bound(ex, optic)
