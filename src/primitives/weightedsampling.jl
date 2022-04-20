@@ -13,15 +13,17 @@ end
     gg_call(weightedrand, m, NamedTuple(), cfg, ctx, (r, ctx) -> ctx)
 end
 
-@inline function tilde(::typeof(weightedrand), lens, xname, x, d, cfg, ctx::NamedTuple)
+@inline function tilde(::typeof(weightedrand), lens, xname, x::Observed, d, cfg, ctx::NamedTuple)
+    x = x.value
     xname = dynamic(xname)
     Δℓ = logdensityof(d, x)
     @reset ctx.ℓ += Δℓ
     (x, ctx, ctx)
 end
 
-@inline function tilde(::typeof(weightedrand), lens, xname, x::Missing, d, cfg, ctx::NamedTuple)
-    x = rand(cfg.rng, d)
-    ctx = set(ctx, PropertyLens{:pars}() ⨟ Lens!!(lens), x)
-    (x, ctx, ctx)
+@inline function tilde(::typeof(weightedrand), lens, xname, x::Unobserved, d, cfg, ctx::NamedTuple)
+    xnew = set(x.value, Lens!!(lens), rand(cfg.rng, d))
+    pars = merge(ctx.pars, NamedTuple{(dynamic(xname),)}((xnew,)))
+    ctx = merge(ctx, (pars=pars,))
+    (xnew, ctx, nothing)
 end
