@@ -90,8 +90,7 @@ end
 #     error(ex)
 # end
 
-
-@generated function gg_call(::F, _mc::MC, _pars::NamedTuple{N,T}, _cfg, _ctx, ::R) where {F, MC, N, T, CB, R}
+@generated function gg_call(::F, _mc::MC, _pars::NamedTuple{N,T}, _cfg, _ctx, ::R) where {F, MC, N, T, R}
     _m = type2model(MC)
     M = getmodule(_m)
 
@@ -102,17 +101,17 @@ end
     body = _m.body |> loadvals(argsT, obsT, parsT)
 
     f = MeasureBase.instance(F)
-    retfun = MeasureBase.instance(R)
-    body = make_body(M, f, body, MeasureBase.instance(R), argsT, obsT, parsT)
+    _retfun = MeasureBase.instance(R)
+    body = make_body(M, f, body, _retfun, argsT, obsT, parsT)
 
-    q = MacroTools.flatten(@q @inline function (_mc, _cfg, _ctx, _pars)
+    q = MacroTools.flatten(@q @inline function (_mc, _cfg, _ctx, _pars, _retfun)
             local _retn
-            _args = Tilde.argvals(_mc)
-            _obs = Tilde.observations(_mc)
+            _args = $argvals(_mc)
+            _obs = $observations(_mc)
             _cfg = merge(_cfg, (args=_args, obs=_obs, pars=_pars))
             $body
             # If body doesn't have a return, default to `return ctx`
-            $retfun(_ctx, _ctx)
+            return $_retfun(_ctx, _ctx)
         end)
 
     q = from_type(_get_gg_func_body(mk_function(M, q))) |> MacroTools.flatten
@@ -120,6 +119,6 @@ end
     quote
         $(Expr(:meta, :inline))
         $q
-        # println($(QuoteNode(q)))
+        # println($(QuoteNode(q)) |> striplines)
     end
 end

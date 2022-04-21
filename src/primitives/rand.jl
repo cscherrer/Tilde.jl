@@ -19,9 +19,9 @@ end
     rand(GLOBAL_RNG, m; kwargs...)
 end
 
-@inline function Base.rand(rng::AbstractRNG, m::AbstractConditionalModel; ctx=NamedTuple())
+@inline function Base.rand(rng::AbstractRNG, m::AbstractConditionalModel; ctx=NamedTuple(), retfun = (r, ctx) -> r)
     cfg = (rng=rng,)
-    gg_call(rand, m, NamedTuple(), cfg, ctx, (r, ctx) -> r)
+    @inline gg_call(rand, m, NamedTuple(), cfg, ctx, retfun)
 end
 
 ###############################################################################
