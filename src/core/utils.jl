@@ -42,7 +42,7 @@ function parameters(ast)
         
         lhs′ = @match lhs begin
             :(($(x::Symbol), $o)) => return Set{Symbol}((x,))
-            :(($(x::Var), $o)) => return Set{Symbol}((x,))
+            :(($(x::Var), $o)) => return Set{Symbol}((x.name,))
             _ => begin
                 (x, o) = unescape.(Accessors.parse_obj_optic(lhs))
                 return Set{Symbol}((x,))
