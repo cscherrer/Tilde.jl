@@ -63,7 +63,7 @@ include("examples-list.jl")
         mean(predict(m(), [(p=p,) for p in rand(10000)])) isa Float64
     end
 
-    @testset "https://github.com/cscherrer/Tilde.jl/issues/258" begin
+    @testset "https://github.com/cscherrer/Soss.jl/issues/258" begin
         m1 = @model begin
             x1 ~ Tilde.Normal(0.0, 1.0)
             x2 ~ Dists.LogNormal(0.0, 1.0)
@@ -82,7 +82,7 @@ include("examples-list.jl")
         @test testvalue(mm) isa NamedTuple
     end
 
-    @testset "https://github.com/cscherrer/Tilde.jl/issues/258#issuecomment-819035325" begin
+    @testset "https://github.com/cscherrer/Soss.jl/issues/258#issuecomment-819035325" begin
         m1 = @model begin
             x1 ~ Tilde.Normal(0.0, 1.0)
             x2 ~ Dists.MvNormal(fill(x1,2), ones(2))
@@ -103,7 +103,7 @@ include("examples-list.jl")
         @test testvalue(mm) isa NamedTuple
     end
 
-    @testset "https://github.com/cscherrer/Tilde.jl/issues/305" begin
+    @testset "https://github.com/cscherrer/Soss.jl/issues/305" begin
         m = @model begin 
             x ~ For(3) do j Normal(μ=j) end
         end;
@@ -112,7 +112,7 @@ include("examples-list.jl")
     end
 
     @testset "Local variables" begin
-        # https://github.com/cscherrer/Tilde.jl/issues/253
+        # https://github.com/cscherrer/Soss.jl/issues/253
 
         m = @model begin
             a ~ For(3) do x Normal(μ=x) end
