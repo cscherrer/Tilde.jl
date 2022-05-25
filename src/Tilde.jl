@@ -45,7 +45,7 @@ import TransformVariables as TV
 using GeneralizedGenerated
 using RuntimeGeneratedFunctions
 RuntimeGeneratedFunctions.init(@__MODULE__)
-using MeasureBase: AbstractKleisli
+using MeasureBase: AbstractTransitionKernel
 
 
 using NestedTuples: TypelevelExpr
