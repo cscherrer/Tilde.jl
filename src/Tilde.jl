@@ -107,7 +107,7 @@ include("transforms/utils.jl")
 
 function __init__()
     @require SampleChainsDynamicHMC = "6d9fd711-e8b2-4778-9c70-c1dfb499d4c4" begin
-        include("samplechains/dynamichmc.jl")
+        include("inference/dynamichmc.jl")
     end
 end
 
