@@ -23,8 +23,10 @@ end
     end
 end
 
-@inline function Accessors.set(o, l::Lens!!{typeof(identity)}, val)
-    if ismutable(o)
+using Tricks
+
+@inline function Accessors.set(o::O, l::Lens!!{typeof(identity)}, val::V) where {O,V}
+    if ismutable(o) && static_hasmethod(iterate, Tuple{O}) && static_hasmethod(iterate, Tuple{V})
         o .= val
     else
         val 
@@ -90,7 +92,7 @@ function opticize(ast)
             :(($(x::Symbol), $o)) => :(($x, $o))
             :(($(x::Var), $o)) => :(($x, $o))
             _ => begin
-                (x, o) = unescape.(Accessors.parse_obj_optic(lhs))
+                (x, o) = parse_optic(lhs)
                 :(($x, $o))
             end
         end

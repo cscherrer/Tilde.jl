@@ -46,9 +46,34 @@ EXAMPLE
     gg_call(measures!, m, pars, NamedTuple(), ctx, (r, ctx) -> ctx)
 end
 
-@inline function tilde(::typeof(measures!), lens, xname, x, d, cfg, ctx)
+@inline function tilde(::typeof(measures!), lens, xname, x::Unobserved, d, cfg, ctx)
+    x = x.value
     xname = dynamic(xname)
     l = PropertyLens{xname}() ⨟ Lens!!(lens)
     ctx = set(ctx, l, d)
     (x, ctx, ctx)
+end
+
+@inline function tilde(::typeof(measures!), lens, xname, x::Observed, d, cfg, ctx)
+    x = x.value
+    (x, ctx, ctx)
+end
+
+export measures
+
+function measures(m::AbstractConditionalModel, pars)
+    sim(x::AbstractArray) = similar(x, Any)
+    sim(x) = x
+
+    f(x::AbstractArray) = productmeasure(narrow_array(x))
+    f(x) = x
+
+    rmap(f, measures!(rmap(sim, pars), m, pars))
+end
+
+measures(m::AbstractConditionalModel) = measures(m, testvalue(m))
+
+function as(mdl::AbstractConditionalModel)
+    ms = measures(mdl)
+    as(map(as, ms))
 end

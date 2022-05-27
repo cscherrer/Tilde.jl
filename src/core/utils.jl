@@ -44,7 +44,7 @@ function parameters(ast)
             :(($(x::Symbol), $o)) => return Set{Symbol}((x,))
             :(($(x::Var), $o)) => return Set{Symbol}((x.name,))
             _ => begin
-                (x, o) = unescape.(Accessors.parse_obj_optic(lhs))
+                (x, o) = parse_optic(lhs)
                 return Set{Symbol}((x,))
             end
         end
@@ -389,4 +389,19 @@ end
 
 struct ReturnNow{T}
     value::T
+end
+
+"""
+    julia> a = Any[1, 2, 3.0];
+
+    julia> narrow_array(a)
+    3-element Vector{Real}:
+     1
+     2
+     3.0
+"""
+narrow_array(x) = collect(Base.Generator(identity, x))
+
+function parse_optic(ex)
+    unescape.(Accessors.parse_obj_optic(ex))
 end

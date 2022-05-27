@@ -35,8 +35,10 @@ using ArrayInterface: StaticInt
 using Static
 
 using IfElse: ifelse
-using TransformVariables: as, asℝ, as𝕀, asℝ₊
+using TransformVariables: asℝ, as𝕀, asℝ₊
 import TransformVariables as TV
+
+using TupleVectors: unwrap
 
 # using SimplePosets: SimplePoset
 # import SimplePosets
@@ -51,7 +53,7 @@ using MeasureBase: AbstractTransitionKernel
 using NestedTuples: TypelevelExpr
 
 using MeasureTheory: ∞
-import MeasureTheory: xform
+import MeasureTheory: as
 
 
 """
