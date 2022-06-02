@@ -15,7 +15,7 @@ end
 
 @inline function tilde(::typeof(logdensityof), lens, xname, x, d, cfg, ctx::NamedTuple)
     x = x.value
-    insupport(d, x) || return (x, ctx, ReturnNow(-Inf))
+    insupport(d, lens(x)) || return (x, ctx, ReturnNow(-Inf))
     @reset ctx.ℓ += MeasureBase.unsafe_logdensityof(d, lens(x))
     (x, ctx, nothing)
 end
@@ -29,5 +29,5 @@ end
 @inline function tilde(::typeof(unsafe_logdensityof), lens, xname, x, d, cfg, ctx::NamedTuple)
     x = x.value
     @reset ctx.ℓ += MeasureBase.unsafe_logdensityof(d, lens(x))
-    (lens(x), ctx, ctx.ℓ)
+    (x, ctx, ctx.ℓ)
 end

@@ -110,15 +110,13 @@ end
             _obs = $observations(_mc)
             _cfg = merge(_cfg, (args=_args, obs=_obs, pars=_pars))
             $body
-            # If body doesn't have a return, default to `return ctx`
+        # If body doesn't have a return, default to `return ctx`
             return $_retfun(_ctx, _ctx)
         end)
 
     q = from_type(_get_gg_func_body(mk_function(M, q))) |> MacroTools.flatten
 
-    quote
-        $(Expr(:meta, :inline))
-        $q
-        # println($(QuoteNode(q)) |> striplines)
-    end
+    pushfirst!(q.args, :($(Expr(:meta, :inline))))
+
+    q
 end

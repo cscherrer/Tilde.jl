@@ -13,7 +13,7 @@ function sample(rng::AbstractRNG,
     nsamples::Int=1000,
     nchains::Int=4)
 
-    ℓ(x) = MeasureTheory.logdensityof(m, x)
+    ℓ(x) = unsafe_logdensityof(m, x)
     tr = as(m)
 
     chains = newchain(rng, nchains, config, ℓ, tr)
