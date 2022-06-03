@@ -16,5 +16,5 @@ end
 end
 
 @inline function tilde(::typeof(testvalue), lens, xname, x::Observed, d, cfg, ctx::NamedTuple)
-    (lens(x.value), ctx, nothing)
+    (x.value, ctx, nothing)
 end
