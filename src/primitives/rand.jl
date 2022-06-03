@@ -21,7 +21,7 @@ end
 
 @inline function Base.rand(rng::AbstractRNG, m::AbstractConditionalModel; ctx=NamedTuple(), retfun = (r, ctx) -> r)
     cfg = (rng=rng,)
-    @inline gg_call(rand, m, NamedTuple(), cfg, ctx, retfun)
+    gg_call(rand, m, NamedTuple(), cfg, ctx, retfun)
 end
 
 ###############################################################################
