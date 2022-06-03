@@ -15,7 +15,7 @@ include("examples-list.jl")
         end
 
         @testset "Transforms" begin
-            include("transforms.jl")
+            # include("transforms.jl")
         end
     end
 
@@ -49,7 +49,7 @@ include("examples-list.jl")
 
         x = rand(outer(sub=inner)).m
         post = outer(sub=inner) | (m = (x=x,),)
-        t = xform(post)
+        t = as(post)
         @test logdensity_def(post, transform(t, randn(3))) isa Real
     end
 
@@ -77,7 +77,7 @@ include("examples-list.jl")
 
         mm = m2(m=m1())
         
-        @test xform(mm|(y=1.0,)) isa TransformVariables.TransformTuple
+        @test as(mm|(y=1.0,)) isa TransformVariables.TransformTuple
         @test basemeasure(mm | (y=1.0,)) isa ProductMeasure
         @test testvalue(mm) isa NamedTuple
     end
@@ -98,7 +98,7 @@ include("examples-list.jl")
         
         mm = m2(m=m1())
 
-        @test xform(mm|(;y=1.0,)) isa TransformVariables.TransformTuple
+        @test as(mm|(;y=1.0,)) isa TransformVariables.TransformTuple
         @test basemeasure(mm | (y=1.0,)) isa ProductMeasure
         @test testvalue(mm) isa NamedTuple
     end
@@ -139,7 +139,7 @@ include("examples-list.jl")
 
         post = m() | (c=c,)
 
-        @test transform(xform(post), randn(6)) isa NamedTuple
+        @test transform(as(post), randn(6)) isa NamedTuple
 
         @testset "logdensity" begin
             dat = randn(100)
