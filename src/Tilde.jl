@@ -94,7 +94,6 @@ include("primitives/rand.jl")
 include("primitives/logdensity.jl")
 include("primitives/logdensity_rel.jl")
 include("primitives/insupport.jl")
-# include("primitives/lenses.jl")
 
 # include("primitives/basemeasure.jl")
 include("primitives/testvalue.jl")
