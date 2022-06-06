@@ -44,7 +44,6 @@ using TupleVectors: unwrap
 # import SimplePosets
 
 
-using GeneralizedGenerated
 using RuntimeGeneratedFunctions
 RuntimeGeneratedFunctions.init(@__MODULE__)
 using MeasureBase: AbstractTransitionKernel
@@ -56,6 +55,10 @@ using MeasureTheory: ∞
 import MeasureTheory: as
 
 
+include("GG/src/GeneralizedGenerated.jl")
+using .GeneralizedGenerated
+const GG = GeneralizedGenerated
+
 """
 we use this to avoid introduce static type parameters
 for generated functions
@@ -66,7 +69,6 @@ export model, Model, tilde, @model
 
 using MLStyle
 include("callify.jl")
-import GeneralizedGenerated as GG
 
 @generated function MeasureTheory.For(f::GG.Closure{F,Free}, inds::I) where {F,Free,I<:Tuple}
     freetypes = Free.types

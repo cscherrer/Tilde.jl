@@ -1,4 +1,4 @@
-struct Model{A,B,M<:GeneralizedGenerated.TypeLevel} <: AbstractModel{A,B,M}
+struct Model{A,B,M<:GG.TypeLevel} <: AbstractModel{A,B,M}
     args :: Vector{Symbol}
     body :: Expr
 end

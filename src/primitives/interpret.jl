@@ -82,7 +82,7 @@ function make_body(M, f, ast::Expr, retfun, argsT, obsT, parsT)
 end
 
 
-function _get_gg_func_body(::RuntimeFn{Args,Kwargs,Body}) where {Args,Kwargs,Body}
+function _get_gg_func_body(::GG.RuntimeFn{Args,Kwargs,Body}) where {Args,Kwargs,Body}
     Body
 end
 

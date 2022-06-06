@@ -262,7 +262,7 @@ getntkeys(::Type{LazyMerge{X,Y}}) where {X,Y} = Tuple(getntkeys(X) ∪ getntkeys
 #  Number
 #  Any
 
-const TypeLevel = GeneralizedGenerated.TypeLevel
+const TypeLevel = GG.TypeLevel
 
 export drop_return
 
