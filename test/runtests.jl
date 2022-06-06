@@ -136,7 +136,7 @@ include("examples-list.jl")
         end
 
         c = rand(m()).c
-
+        
         post = m() | (c=c,)
 
         @test transform(as(post), randn(6)) isa NamedTuple
