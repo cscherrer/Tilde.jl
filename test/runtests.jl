@@ -15,7 +15,7 @@ include("examples-list.jl")
         end
 
         @testset "Transforms" begin
-            include("transforms.jl")
+            # include("transforms.jl")
         end
     end
 
@@ -49,7 +49,7 @@ include("examples-list.jl")
 
         x = rand(outer(sub=inner)).m
         post = outer(sub=inner) | (m = (x=x,),)
-        t = xform(post)
+        t = as(post)
         @test logdensity_def(post, transform(t, randn(3))) isa Real
     end
 
@@ -63,7 +63,7 @@ include("examples-list.jl")
         mean(predict(m(), [(p=p,) for p in rand(10000)])) isa Float64
     end
 
-    @testset "https://github.com/cscherrer/Tilde.jl/issues/258" begin
+    @testset "https://github.com/cscherrer/Soss.jl/issues/258" begin
         m1 = @model begin
             x1 ~ Tilde.Normal(0.0, 1.0)
             x2 ~ Dists.LogNormal(0.0, 1.0)
@@ -77,12 +77,12 @@ include("examples-list.jl")
 
         mm = m2(m=m1())
         
-        @test xform(mm|(y=1.0,)) isa TransformVariables.TransformTuple
+        @test as(mm|(y=1.0,)) isa TransformVariables.TransformTuple
         @test basemeasure(mm | (y=1.0,)) isa ProductMeasure
         @test testvalue(mm) isa NamedTuple
     end
 
-    @testset "https://github.com/cscherrer/Tilde.jl/issues/258#issuecomment-819035325" begin
+    @testset "https://github.com/cscherrer/Soss.jl/issues/258#issuecomment-819035325" begin
         m1 = @model begin
             x1 ~ Tilde.Normal(0.0, 1.0)
             x2 ~ Dists.MvNormal(fill(x1,2), ones(2))
@@ -98,12 +98,12 @@ include("examples-list.jl")
         
         mm = m2(m=m1())
 
-        @test xform(mm|(;y=1.0,)) isa TransformVariables.TransformTuple
+        @test as(mm|(;y=1.0,)) isa TransformVariables.TransformTuple
         @test basemeasure(mm | (y=1.0,)) isa ProductMeasure
         @test testvalue(mm) isa NamedTuple
     end
 
-    @testset "https://github.com/cscherrer/Tilde.jl/issues/305" begin
+    @testset "https://github.com/cscherrer/Soss.jl/issues/305" begin
         m = @model begin 
             x ~ For(3) do j Normal(μ=j) end
         end;
@@ -112,7 +112,7 @@ include("examples-list.jl")
     end
 
     @testset "Local variables" begin
-        # https://github.com/cscherrer/Tilde.jl/issues/253
+        # https://github.com/cscherrer/Soss.jl/issues/253
 
         m = @model begin
             a ~ For(3) do x Normal(μ=x) end
@@ -136,10 +136,10 @@ include("examples-list.jl")
         end
 
         c = rand(m()).c
-
+        
         post = m() | (c=c,)
 
-        @test transform(xform(post), randn(6)) isa NamedTuple
+        @test transform(as(post), randn(6)) isa NamedTuple
 
         @testset "logdensity" begin
             dat = randn(100)

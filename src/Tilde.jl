@@ -35,24 +35,29 @@ using ArrayInterface: StaticInt
 using Static
 
 using IfElse: ifelse
-using TransformVariables: as, asℝ, as𝕀, asℝ₊
+using TransformVariables: asℝ, as𝕀, asℝ₊
 import TransformVariables as TV
+
+using TupleVectors: unwrap
 
 # using SimplePosets: SimplePoset
 # import SimplePosets
 
 
-using GeneralizedGenerated
 using RuntimeGeneratedFunctions
 RuntimeGeneratedFunctions.init(@__MODULE__)
-using MeasureBase: AbstractKleisli
+using MeasureBase: AbstractTransitionKernel
 
 
 using NestedTuples: TypelevelExpr
 
 using MeasureTheory: ∞
-import MeasureTheory: xform
+import MeasureTheory: as
 
+
+include("GG/src/GeneralizedGenerated.jl")
+using .GeneralizedGenerated
+const GG = GeneralizedGenerated
 
 """
 we use this to avoid introduce static type parameters
@@ -64,7 +69,6 @@ export model, Model, tilde, @model
 
 using MLStyle
 include("callify.jl")
-import GeneralizedGenerated as GG
 
 @generated function MeasureTheory.For(f::GG.Closure{F,Free}, inds::I) where {F,Free,I<:Tuple}
     freetypes = Free.types
@@ -90,18 +94,21 @@ include("distributions/iid.jl")
 
 include("primitives/rand.jl")
 include("primitives/logdensity.jl")
+include("primitives/logdensity_rel.jl")
 include("primitives/insupport.jl")
 
 # include("primitives/basemeasure.jl")
 include("primitives/testvalue.jl")
 include("primitives/testparams.jl")
-
+include("primitives/weightedsampling.jl")
+include("primitives/measures.jl")
+include("primitives/basemeasure.jl")
 
 include("transforms/utils.jl")
 
 function __init__()
     @require SampleChainsDynamicHMC = "6d9fd711-e8b2-4778-9c70-c1dfb499d4c4" begin
-        include("samplechains/dynamichmc.jl")
+        include("inference/dynamichmc.jl")
     end
 end
 

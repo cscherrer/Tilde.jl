@@ -26,6 +26,8 @@ arguments(m::AbstractModel) = model(m).args
 export parameters
 parameters(m::AbstractModel) = parameters(m.body)
 
+parameters(m::AbstractConditionalModel) = parameters(model(m))
+
 function parameters(ast)
     leaf(x) = Set{Symbol}()
     @inline function branch(f, head, args)
@@ -40,9 +42,9 @@ function parameters(ast)
         
         lhs′ = @match lhs begin
             :(($(x::Symbol), $o)) => return Set{Symbol}((x,))
-            :(($(x::Var), $o)) => return Set{Symbol}((x,))
+            :(($(x::Var), $o)) => return Set{Symbol}((x.name,))
             _ => begin
-                (x, o) = unescape.(Accessors.parse_obj_optic(lhs))
+                (x, o) = parse_optic(lhs)
                 return Set{Symbol}((x,))
             end
         end
@@ -73,13 +75,8 @@ export foldast
 
 
 function foldast(leaf, branch; kwargs...)
-    @inline function f(ast::Expr; kwargs...)
-        MLStyle.@match ast begin
-            Expr(head, args...) => branch(f, head, args; kwargs...)
-        end
-    end
-    f(x; kwargs...) = leaf(x; kwargs...)
-
+    @inline f(ast::Expr; kwargs...) = branch(f, ast.head, ast.args; kwargs...)
+    @inline f(x; kwargs...) = leaf(x; kwargs...)
     return f
 end
 
@@ -201,22 +198,25 @@ function loadvals(argstype, obstype)
     end) |> MacroTools.flatten
 end
 
-function loadvals(argstype, datatype, parstype)
+function loadvals(argstype, obstype, parstype)
     args = schema(argstype)
-    data = schema(datatype)
+    data = schema(obstype)
     pars = schema(parstype)
 
     loader = @q begin
 
     end
 
-    for k in keys(args)
+    for k in keys(args) ∪ keys(pars) ∪ keys(data)
+        push!(loader.args, :(local $k))
+    end
+    for k in setdiff(keys(args), keys(pars) ∪ keys(data))
         T = getproperty(args, k)
         push!(loader.args, :($k::$T = _args.$k))
     end
     for k in setdiff(keys(data), keys(pars))
         T = getproperty(data, k)
-        push!(loader.args, :($k::$T = _data.$k))
+        push!(loader.args, :($k::$T = _obs.$k))
     end
 
     for k in setdiff(keys(pars), keys(data))
@@ -227,7 +227,7 @@ function loadvals(argstype, datatype, parstype)
     for k in keys(pars) ∩ keys(data)
         qk = QuoteNode(k)
         if typejoin(getproperty(pars, k), getproperty(data, k)) <: NamedTuple
-            push!(loader.args, :($k = Tilde.NestedTuples.lazymerge(_data.$k, _pars.$k)))
+            push!(loader.args, :($k = Tilde.NestedTuples.lazymerge(_obs.$k, _pars.$k)))
         else
             T = getproperty(pars, k)
             push!(loader.args, quote
@@ -262,7 +262,7 @@ getntkeys(::Type{LazyMerge{X,Y}}) where {X,Y} = Tuple(getntkeys(X) ∪ getntkeys
 #  Number
 #  Any
 
-const TypeLevel = GeneralizedGenerated.TypeLevel
+const TypeLevel = GG.TypeLevel
 
 export drop_return
 
@@ -331,7 +331,7 @@ function solve_scope(m::AbstractModel)
 end
 
 function solve_scope(ex::Expr)
-    ex |> detilde |> simplify_ex  |> MacroTools.flatten  |> solve_from_local |> retilde
+    ex |> detilde |> simplify_ex  |> MacroTools.flatten  |> solve_from_local! |> retilde
 end
 
 function locally_bound(ex, optic)
@@ -389,4 +389,19 @@ end
 
 struct ReturnNow{T}
     value::T
+end
+
+"""
+    julia> a = Any[1, 2, 3.0];
+
+    julia> narrow_array(a)
+    3-element Vector{Real}:
+     1
+     2
+     3.0
+"""
+narrow_array(x) = collect(Base.Generator(identity, x))
+
+function parse_optic(ex)
+    unescape.(Accessors.parse_obj_optic(ex))
 end

@@ -19,7 +19,7 @@ function bouncy(m::ModelClosure, T = 1000.0;  c=10.0, λref=0.1, ρ=0.0, adapt=f
 
     ℓ(pars) = logdensity_def(m, pars)
 
-    t = xform(m)
+    t = as(m)
 
     function f(x)
         (θ, logjac) = transform_and_logjac(t, x)

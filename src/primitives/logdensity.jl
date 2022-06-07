@@ -6,21 +6,28 @@ import MeasureTheory
 
 using Accessors
 
-@inline function logdensityof(cm::AbstractConditionalModel, pars::NamedTuple)
-    # TODO: Check insupport
-    dynamic(unsafe_logdensityof(cm, pars))
+
+@inline function MeasureBase.logdensityof(cm::AbstractConditionalModel, pars::NamedTuple; cfg=NamedTuple(), ctx=NamedTuple(), retfun=(r,ctx) -> ctx.ℓ)
+    # cfg = merge(cfg, (pars=pars,))
+    ctx = merge(ctx, (ℓ = 0.0,))
+    gg_call(logdensityof, cm, pars, cfg, ctx, retfun)
 end
 
-@inline function MeasureBase.unsafe_logdensityof(cm::AbstractConditionalModel, pars::NamedTuple; cfg=NamedTuple(), ctx=NamedTuple())
-    cfg = merge(cfg, (pars=pars,))
-    ctx = merge(ctx, (ℓ = partialstatic(0.0),))
-    gg_call(cm, unsafe_logdensityof, cfg, ctx, DropReturn())
+@inline function tilde(::typeof(logdensityof), lens, xname, x, d, cfg, ctx::NamedTuple)
+    x = x.value
+    insupport(d, lens(x)) || return (x, ctx, ReturnNow(-Inf))
+    @reset ctx.ℓ += MeasureBase.unsafe_logdensityof(d, lens(x))
+    (x, ctx, nothing)
+end
+
+@inline function MeasureBase.unsafe_logdensityof(cm::AbstractConditionalModel, pars::NamedTuple; cfg=NamedTuple(), ctx=NamedTuple(), retfun=(r,ctx) -> ctx.ℓ)
+    # cfg = merge(cfg, (pars=pars,))
+    ctx = merge(ctx, (ℓ = 0.0,))
+    gg_call(unsafe_logdensityof, cm, pars, cfg, ctx, retfun)
 end
 
 @inline function tilde(::typeof(unsafe_logdensityof), lens, xname, x, d, cfg, ctx::NamedTuple)
-    lm = lazymerge(cfg.obs, cfg.pars)
-    x = NestedTuples._get(lm, xname)
-    # x =get(lm, xname)
+    x = x.value
     @reset ctx.ℓ += MeasureBase.unsafe_logdensityof(d, lens(x))
     (x, ctx, ctx.ℓ)
 end

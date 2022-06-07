@@ -37,6 +37,4 @@ obstype(::Type{<:ModelClosure}) = NamedTuple{(), Tuple{}}
 
 type2model(::Type{MC}) where {M,MC<:ModelClosure{M}} = type2model(M)
 
-import Base
-
-Base.:|(m::ModelClosure, nt::NamedTuple) = ModelPosterior(m, nt)
+MeasureBase.condition(m::ModelClosure, nt::NamedTuple) = ModelPosterior(m, nt)

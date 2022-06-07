@@ -47,5 +47,5 @@ makedocs(;
 )
 
 deploydocs(;
-    repo="github.com/cscherrer/Tilde.jl",
+    repo="github.com/cscherrer/Tilde.jl", push_preview=true
 )
