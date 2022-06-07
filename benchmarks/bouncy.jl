@@ -63,6 +63,7 @@ end
 # dneglogp(2.4, randn(25), randn(25))
 # ∇neglogp!(randn(25), 2.1, randn(25))
 
+
 d = 1 + 24 # number of parameters 
 t0 = 0.0
 x0 = zeros(d) # starting point sampler
@@ -80,6 +81,45 @@ Z = BouncyParticle(∅, ∅, # ignored
     M # cholesky of momentum precision
 ) 
 
+sampler = ZZB.NotFactSampler(Z, (dneglogp, ∇neglogp!), ZZB.LocalBound(c), t0 => (x0, θ0), ZZB.Rng(ZZB.Seed()),
+(), (;adapt=true, # adapt bound c
+subsample=true, # keep only samples at refreshment times
+))
+
+# let
+# ϕ = iterate(sampler)
+# while ϕ !== nothing
+#     val, state = ϕ
+#     val[1]> 1 && break
+#     println(val[1])
+#     ϕ = iterate(sampler, state)
+# end
+# end
+
+using TupleVectors: chainvec
+
+function collect_sampler(t, sampler, n)
+    x1 = transform(t, sampler.u0[2][1])
+    tv = chainvec(x1, n)
+    ϕ = iterate(sampler)
+    j = 1
+    while ϕ !== nothing && j < n
+        j += 1
+        val, state = ϕ
+        tv[j] = transform(t, val[2])
+        ϕ = iterate(sampler, state)
+    end
+    tv
+end
+
+
+
+tv = @time collect_sampler(as(post), sampler, 1000)
+
+using OnlineStats
+
+
+
 trace, final, (acc, num), cs = @time pdmp(
         dneglogp, # return first two directional derivatives of negative target log-likelihood in direction v
         ∇neglogp!, # return gradient of negative target log-likelihood
@@ -94,9 +134,14 @@ trace, final, (acc, num), cs = @time pdmp(
 
 t, x = ZigZagBoomerang.sep(trace)
 
+# tv = chainvec(transform(as(post), first(sampler)[2]))
 
+# tvs = (push!(tv, transform(as(post), s[2])) for s in Iterators.drop(sampler,1));
+
+# @time first(Iterators.drop(tvs,1000))
 
 using TupleVectors: chainvec
+
 using MeasureTheory: transform
 function tuplevector(t, x::Vector{Vector{T}}) where {T}
     x1 = transform(t, x[2])
@@ -116,9 +161,9 @@ tv = tuplevector(as(post), x)
 # bps_chain
 
 # # for BPS
-# using Pathfinder
-# init_scale=1
-# @time result = pathfinder(x->-neglogp(x); dim=d, init_scale)
+using Pathfinder
+init_scale=1
+@time result = pathfinder(ℓ; dim=d, init_scale)
 # M = Diagonal(1 ./ sqrt.(diag(result.fit_distribution.Σ)))
 # x0 = result.fit_distribution.μ
 # θ0 = M\randn(d) # starting direction sampler
