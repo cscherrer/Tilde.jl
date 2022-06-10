@@ -63,6 +63,7 @@ end
 # dneglogp(2.4, randn(25), randn(25))
 # ∇neglogp!(randn(25), 2.1, randn(25))
 
+
 d = 1 + 24 # number of parameters 
 t0 = 0.0
 x0 = zeros(d) # starting point sampler
@@ -79,6 +80,38 @@ Z = BouncyParticle(∅, ∅, # ignored
     0.0, # ignored
     M # cholesky of momentum precision
 ) 
+
+sampler = ZZB.NotFactSampler(Z, (dneglogp, ∇neglogp!), ZZB.LocalBound(c), t0 => (x0, θ0), ZZB.Rng(ZZB.Seed()),
+(), (;adapt=true, # adapt bound c
+subsample=true, # keep only samples at refreshment times
+))
+
+let
+ϕ = iterate(sampler)
+while ϕ !== nothing
+    val, state = ϕ
+    val[1]> 1 && break
+    println(val[1])
+    ϕ = iterate(sampler, state)
+end
+end
+
+function collect_sampler(t, sampler, n)
+    x1 = transform(t, sampler.u0[2][1])
+    tv = chainvec(x1, n)
+    ϕ = iterate(sampler)
+    j = 1
+    while ϕ !== nothing && j < n
+        j += 1
+        val, state = ϕ
+        tv[j] = transform(t, val[2])
+        ϕ = iterate(sampler, state)
+    end
+    tv
+end
+tv = @time collect_sampler(as(post), sampler, length(x))
+
+
 
 trace, final, (acc, num), cs = @time pdmp(
         dneglogp, # return first two directional derivatives of negative target log-likelihood in direction v
