@@ -1,10 +1,9 @@
-using Tilde
 import Pkg
-Pkg.activate("benchmarks")
+#Pkg.activate("benchmarks")
+using Tilde
 using LinearAlgebra
 using Revise
 using ZigZagBoomerang
-using StatsFuns
 const ZZB = ZigZagBoomerang
 using LinearAlgebra
 const ∅ = nothing
@@ -16,35 +15,29 @@ Random.seed!(1)
 
 # read data
 function readlrdata()
-    fname = joinpath("/home/chad/git/Turing.jl/benchmarks/nuts/lr_nuts.data")
+    fname = joinpath("lr.data")
     z = readdlm(fname)
-    x = z[:,1:end-1]
-    x = [ones(size(x,1)) x]
+    A = z[:,1:end-1]
+    A = [ones(size(A,1)) A]
     y = z[:,end] .- 1
-    return x, y
+    return A, y
 end
-x, y = readlrdata()
+A, y = readlrdata()
 
-xt = collect(x')
+At = collect(A')
 
-m = @model (xt, y, σ) begin
-    d,n = size(xt)
+model = @model (At, y, σ) begin
+    d,n = size(At)
     θ ~ Normal(σ=σ)^d
     for j in 1:n
-        logitp = dot(view(xt,:,j), θ)
+        logitp = dot(view(At,:,j), θ)
         y[j] ~ Bernoulli(logitp = logitp)
     end
 end
 
 σ = 100.0
 
-post = m(xt,y, σ) | (;y)
-
-# using SampleChainsDynamicHMC
-
-# Tilde.sample(post, dynamichmc(), 2,1)
-
-# @time s = Tilde.sample(post, dynamichmc(), 1000, 1)
+post = model(At, y, σ) | (;y)
 
 ℓ(θ) = logdensityof(post, (;θ))
 obj(θ) = -ℓ(θ)
@@ -63,14 +56,21 @@ end
 # dneglogp(2.4, randn(25), randn(25))
 # ∇neglogp!(randn(25), 2.1, randn(25))
 
-d = 1 + 24 # number of parameters 
+d = 25 # number of parameters 
 t0 = 0.0
 x0 = zeros(d) # starting point sampler
-T = 500. # end time (similar to number of samples in MCMC)
-c = 5.0 # initial guess for the bound
-#M = I
-M = Diagonal(1 ./ [1.7, 0.08, 0.01, 0.09, 0.01, 0.06, 0.08, 0.12, 0.09, 0.11, 0.01, 0.11, 0.18, 0.29, 0.21, 0.88, 0.21, 0.39, 0.44, 0.65, 0.4, 0.35, 0.6, 0.31, 0.3])
+# estimated posterior mean
+xhat = [3.412, -0.5916, 0.03527, -0.3873, 0.004466, -0.2345, -0.15, -0.2164, 0.01229, 0.1739, -0.009764, -0.3217, 0.2173, 0.08189, -0.2851, -1.59, 0.6661, -1.003, 1.078, 1.401, 0.3271, -0.1361, -0.6437, -0.06795, -0.05282]
+
+T = 5000. # end time (similar to number of samples in MCMC)
+c = 0.01 # initial guess for the bound
+using Pathfinder
+init_scale=1
+@time result = pathfinder(ℓ; dim=d, init_scale)
+M = Diagonal(1 ./ sqrt.(diag(result.fit_distribution.Σ)))
+x0 = result.fit_distribution.μ
 θ0 = M\randn(d) # starting direction sampler
+MAP = result.optim_solution # MAP, could be useful for control variates
 
 # define BouncyParticle sampler (has two relevant parameters) 
 Z = BouncyParticle(∅, ∅, # ignored
@@ -80,45 +80,34 @@ Z = BouncyParticle(∅, ∅, # ignored
     M # cholesky of momentum precision
 ) 
 
-trace, final, (acc, num), cs = @time pdmp(
-        dneglogp, # return first two directional derivatives of negative target log-likelihood in direction v
-        ∇neglogp!, # return gradient of negative target log-likelihood
-        t0, x0, θ0, T, # initial state and duration
-        ZZB.LocalBound(c), # use Hessian information 
-        Z; # sampler
-        adapt=true, # adapt bound c
-        progress=true, # show progress bar
-        subsample=true # keep only samples at refreshment times
-)
-
-
-t, x = ZigZagBoomerang.sep(trace)
-
+sampler = ZZB.NotFactSampler(Z, (dneglogp, ∇neglogp!), ZZB.LocalBound(c), t0 => (x0, θ0), ZZB.Rng(ZZB.Seed()), (),
+(; adapt=true, # adapt bound c
+      subsample=true, # keep only samples at refreshment times
+))
 
 
 using TupleVectors: chainvec
 using MeasureTheory: transform
-function tuplevector(t, x::Vector{Vector{T}}) where {T}
-    x1 = transform(t, x[2])
-    tv = chainvec(x1, length(x))
-    for j in 2:length(x)
-        tv[j] = transform(t, x[j])
+
+
+function collect_sampler(t, sampler, n)
+    x1 = transform(t, sampler.u0[2][1])
+    tv = chainvec(x1, n)
+    ϕ = iterate(sampler)
+    j = 1
+    global state
+    while ϕ !== nothing && j < n
+        j += 1
+        val, state = ϕ
+        tv[j] = transform(t, val[2])
+        ϕ = iterate(sampler, state)
     end
-    return tv
+    tv
 end
+tv = @time collect_sampler(as(post), sampler, 1000)
 
-tv = tuplevector(as(post), x)
+using MCMCChains
+bps_chain = MCMCChains.Chains(tv.θ)
+bps_chain = setinfo(bps_chain,  (;start_time=0.0, stop_time = elapsed_time))
+bps_chain
 
-
-
-# bps_chain = MCMCChains.Chains([xj[i] for xj in x[end÷4:end], i in 1:d])
-# bps_chain = setinfo(bps_chain,  (;start_time=0.0, stop_time = elapsed_time))
-# bps_chain
-
-# # for BPS
-# using Pathfinder
-# init_scale=1
-# @time result = pathfinder(x->-neglogp(x); dim=d, init_scale)
-# M = Diagonal(1 ./ sqrt.(diag(result.fit_distribution.Σ)))
-# x0 = result.fit_distribution.μ
-# θ0 = M\randn(d) # starting direction sampler
