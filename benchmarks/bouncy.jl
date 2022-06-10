@@ -76,7 +76,7 @@ MAP = result.optim_solution # MAP, could be useful for control variates
 
 # define BouncyParticle sampler (has two relevant parameters) 
 Z = BouncyParticle(∅, ∅, # ignored
-    2.0, # momentum refreshment rate 
+    2.0, # momentum refreshment rate and sample saving rate 
     0.95, # momentum correlation / only gradually change momentum in refreshment/momentum update
     0.0, # ignored
     M # cholesky of momentum precision
