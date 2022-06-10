@@ -133,4 +133,9 @@ print("μ̂ = ", μ̂2)
 bps_chain
 
 
+using SampleChainsDynamicHMC
+hmc_time = @elapsed (s = Tilde.sample(post, dynamichmc(), 100))
+hmc_chain = MCMCChains.Chains(tv.θ)
+hmc_chain = MCMCChains.setinfo(hmc_chain,  (;start_time=0.0, stop_time = hmc_time))
+
 
