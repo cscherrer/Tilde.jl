@@ -133,8 +133,9 @@ print("μ̂ = ", μ̂2)
 
 bps_chain
 
-using DynamicHMC, LogDensityProblems, TransformVariables
 using SampleChainsDynamicHMC
+init_params = pf_result.draws[:, 1]
+inv_metric = pf_result.fit_distribution.Σ
 hmc_time = @elapsed (s = Tilde.sample(post, dynamichmc(
     ;init=(; q=init_params, κ=GaussianKineticEnergy(inv_metric)),
     warmup_stages=default_warmup_stages(; middle_steps=0, doubling_stages=0),
