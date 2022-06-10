@@ -64,7 +64,7 @@ t0 = 0.0
 x0 = zeros(d) # starting point sampler
 # estimated posterior mean (n=100000, 797s)
 μ̂ = [3.406, -0.5918, 0.0352, -0.3874, 0.004481, -0.2346, -0.1495, -0.2184, 0.01219, 0.1731, -0.00976, -0.3224, 0.2168, 0.08002, -0.2829, -1.581, 0.6666, -0.9984, 1.081, 1.405, 0.327, -0.1357, -0.6446, -0.06583, -0.04994]
-n = 10000
+n = 1000
 c = 0.01 # initial guess for the bound
 using Pathfinder
 init_scale=1
@@ -105,6 +105,7 @@ function collect_sampler(t, sampler, n; progress=true, progress_stops=20)
     tv = chainvec(x1, n)
     ϕ = iterate(sampler)
     j = 1
+    local state
     while ϕ !== nothing && j < n
         j += 1
         val, state = ϕ
@@ -116,10 +117,10 @@ function collect_sampler(t, sampler, n; progress=true, progress_stops=20)
         end 
     end
     ismissing(prg) || ProgressMeter.finish!(prg)
-    tv
+    tv, (;uT=state[1], acc=state[3][1], total=state[3][2], bound=state[4].c)
 end
 elapsed_time  = @elapsed begin
-    tv = collect_sampler(as(post), sampler, n)
+    tv, info = collect_sampler(as(post), sampler, n)
 end
 @show elapsed_time
 
