@@ -1,6 +1,7 @@
 import Pkg
 #Pkg.activate("benchmarks")
 using Tilde
+using ProgressMeter
 using LinearAlgebra
 using Revise
 using ZigZagBoomerang
@@ -26,7 +27,7 @@ A, y = readlrdata()
 
 At = collect(A')
 
-model = @model (At, y, σ) begin
+model_lr = @model (At, y, σ) begin
     d,n = size(At)
     θ ~ Normal(σ=σ)^d
     for j in 1:n
@@ -36,8 +37,7 @@ model = @model (At, y, σ) begin
 end
 
 σ = 100.0
-post = model(At, y, σ) | (;y)
-
+post = model_lr(At, y, σ) | (;y)
 let post = post, σ = σ
     global ℓ, obj, dneglogp, ∇neglogp!
     as_post = as(post)
@@ -53,9 +53,7 @@ let post = post, σ = σ
         ForwardDiff.gradient!(y, obj, x)
         y
     end
-    ℓ, obj, dneglogp, ∇neglogp!
 end
-
 # Try things out
 # dneglogp(2.4, randn(25), randn(25))
 # ∇neglogp!(randn(25), 2.1, randn(25))
@@ -66,7 +64,7 @@ t0 = 0.0
 x0 = zeros(d) # starting point sampler
 # estimated posterior mean (n=100000, 797s)
 μ̂ = [3.406, -0.5918, 0.0352, -0.3874, 0.004481, -0.2346, -0.1495, -0.2184, 0.01219, 0.1731, -0.00976, -0.3224, 0.2168, 0.08002, -0.2829, -1.581, 0.6666, -0.9984, 1.081, 1.405, 0.327, -0.1357, -0.6446, -0.06583, -0.04994]
-n = 1000
+n = 10000
 c = 0.01 # initial guess for the bound
 using Pathfinder
 init_scale=1
@@ -78,7 +76,7 @@ MAP = result.optim_solution # MAP, could be useful for control variates
 
 # define BouncyParticle sampler (has two relevant parameters) 
 Z = BouncyParticle(∅, ∅, # ignored
-    1.0, # momentum refreshment rate 
+    2.0, # momentum refreshment rate 
     0.95, # momentum correlation / only gradually change momentum in refreshment/momentum update
     0.0, # ignored
     M # cholesky of momentum precision
@@ -94,7 +92,15 @@ using TupleVectors: chainvec
 using Tilde.MeasureTheory: transform
 
 
-function collect_sampler(t, sampler, n)
+function collect_sampler(t, sampler, n; progress=true, progress_stops=20)
+    if progress
+        prg = Progress(progress_stops, 1)
+    else
+        prg = missing
+    end
+    stops = ismissing(prg) ? 0 : max(prg.n - 1, 0) # allow one stop for cleanup
+    nstop = n/stops
+
     x1 = transform(t, sampler.u0[2][1])
     tv = chainvec(x1, n)
     ϕ = iterate(sampler)
@@ -104,7 +110,12 @@ function collect_sampler(t, sampler, n)
         val, state = ϕ
         tv[j] = transform(t, val[2])
         ϕ = iterate(sampler, state)
+        if j > nstop
+            nstop += n/stops
+            next!(prg) 
+        end 
     end
+    ismissing(prg) || ProgressMeter.finish!(prg)
     tv
 end
 elapsed_time  = @elapsed begin
@@ -116,7 +127,8 @@ using MCMCChains
 bps_chain = MCMCChains.Chains(tv.θ)
 bps_chain = setinfo(bps_chain,  (;start_time=0.0, stop_time = elapsed_time))
 
-print("μ̂ = ", round.(mean(bps_chain).nt[:mean], sigdigits=4))
+μ̂2 = round.(mean(bps_chain).nt[:mean], sigdigits=4)
+print("μ̂ = ", μ̂2)
 
 bps_chain
 
