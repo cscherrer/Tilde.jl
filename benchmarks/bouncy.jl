@@ -39,7 +39,8 @@ end
 
 post = model(At, y, σ) | (;y)
 
-ℓ(θ) = logdensityof(post, (;θ))
+#ℓ(θ) = logdensityof(post, (;θ))
+ℓ(θ) = logdensityof(post, transform(as(post), θ))
 obj(θ) = -ℓ(θ)
 
 function dneglogp(t, x, v, args...) # two directional derivatives
@@ -104,7 +105,9 @@ function collect_sampler(t, sampler, n)
     end
     tv
 end
-tv = @time collect_sampler(as(post), sampler, 1000)
+elapsed_time  = @elapsed begin
+    tv = collect_sampler(as(post), sampler, 1000)
+end
 
 using MCMCChains
 bps_chain = MCMCChains.Chains(tv.θ)
