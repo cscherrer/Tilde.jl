@@ -56,6 +56,7 @@ end
 # dneglogp(2.4, randn(25), randn(25))
 # ∇neglogp!(randn(25), 2.1, randn(25))
 
+
 d = 25 # number of parameters 
 t0 = 0.0
 x0 = zeros(d) # starting point sampler
