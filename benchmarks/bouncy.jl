@@ -68,11 +68,11 @@ n = 1000
 c = 0.01 # initial guess for the bound
 using Pathfinder
 init_scale=1
-@time result = pathfinder(ℓ; dim=d, init_scale)
-M = Diagonal(1 ./ sqrt.(diag(result.fit_distribution.Σ)))
-x0 = result.fit_distribution.μ
+@time pf_result = pathfinder(ℓ; dim=d, init_scale)
+M = Diagonal(1 ./ sqrt.(diag(pf_result.fit_distribution.Σ)))
+x0 = pf_result.fit_distribution.μ
 θ0 = M\randn(d) # starting direction sampler
-MAP = result.optim_solution # MAP, could be useful for control variates
+MAP = pf_result.optim_solution # MAP, could be useful for control variates
 
 # define BouncyParticle sampler (has two relevant parameters) 
 Z = BouncyParticle(∅, ∅, # ignored
