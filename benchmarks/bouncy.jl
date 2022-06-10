@@ -96,7 +96,6 @@ function collect_sampler(t, sampler, n)
     tv = chainvec(x1, n)
     ϕ = iterate(sampler)
     j = 1
-    global state
     while ϕ !== nothing && j < n
         j += 1
         val, state = ϕ
