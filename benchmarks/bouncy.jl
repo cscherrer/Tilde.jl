@@ -88,7 +88,7 @@ sampler = ZZB.NotFactSampler(Z, (dneglogp, ∇neglogp!), ZZB.LocalBound(c), t0 =
 
 
 using TupleVectors: chainvec
-using MeasureTheory: transform
+using Tilde.MeasureTheory: transform
 
 
 function collect_sampler(t, sampler, n)
