@@ -67,12 +67,12 @@ x0 = zeros(d) # starting point sampler
 n = 1000
 c = 0.01 # initial guess for the bound
 using Pathfinder
-init_scale=1
-@time pf_result = pathfinder(ℓ; dim=d, init_scale)
-M = Diagonal(1 ./ sqrt.(diag(pf_result.fit_distribution.Σ)))
-x0 = pf_result.fit_distribution.μ
-θ0 = M\randn(d) # starting direction sampler
-MAP = pf_result.optim_solution # MAP, could be useful for control variates
+init_scale=1;
+@time pf_result = pathfinder(ℓ; dim=d, init_scale);
+M = Diagonal(1 ./ sqrt.(diag(pf_result.fit_distribution.Σ)));
+x0 = pf_result.fit_distribution.μ;
+θ0 = M\randn(d); # starting direction sampler
+MAP = pf_result.optim_solution; # MAP, could be useful for control variates
 
 # define BouncyParticle sampler (has two relevant parameters) 
 Z = BouncyParticle(∅, ∅, # ignored
@@ -133,10 +133,12 @@ print("μ̂ = ", μ̂2)
 
 bps_chain
 
-
+using DynamicHMC, LogDensityProblems, TransformVariables
 using SampleChainsDynamicHMC
-hmc_time = @elapsed (s = Tilde.sample(post, dynamichmc(), 100))
+hmc_time = @elapsed (s = Tilde.sample(post, dynamichmc(
+    ;init=(; q=init_params, κ=GaussianKineticEnergy(inv_metric)),
+    warmup_stages=default_warmup_stages(; middle_steps=0, doubling_stages=0),
+    ), 1000,1))
 hmc_chain = MCMCChains.Chains(s.θ)
 hmc_chain = MCMCChains.setinfo(hmc_chain,  (;start_time=0.0, stop_time = hmc_time))
-
 
