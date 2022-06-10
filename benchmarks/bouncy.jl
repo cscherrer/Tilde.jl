@@ -135,11 +135,15 @@ bps_chain
 
 using SampleChainsDynamicHMC
 init_params = pf_result.draws[:, 1]
-inv_metric = pf_result.fit_distribution.Σ
+inv_metric = Diagonal(pf_result.fit_distribution.Σ)
+
 hmc_time = @elapsed (s = Tilde.sample(post, dynamichmc(
     ;init=(; q=init_params, κ=GaussianKineticEnergy(inv_metric)),
     warmup_stages=default_warmup_stages(; middle_steps=0, doubling_stages=0),
     ), 1000,1))
+
 hmc_chain = MCMCChains.Chains(s.θ)
 hmc_chain = MCMCChains.setinfo(hmc_chain,  (;start_time=0.0, stop_time = hmc_time))
 
+ess_bps = MCMCChains.ess_rhat(bps_chain).nt.ess_per_sec
+ess_hmc = MCMCChains.ess_rhat(hmc_chain).nt.ess_per_sec
