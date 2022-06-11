@@ -17,7 +17,7 @@ end
 end
 
 @inline function Base.rand(rng::AbstractRNG, ::Type{T_rng}, d::AbstractConditionalModel, N::Int) where {T_rng}
-    r = chainvec(rand(rng, d), N)
+    r = chainvec(rand(rng, T_rng, d), N)
     for j in 2:N
         @inbounds r[j] = rand(rng, T_rng, d)
     end
