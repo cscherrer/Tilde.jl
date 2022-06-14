@@ -74,37 +74,24 @@ c = 4.0 # initial guess for the bound
 
 init_scale=1;
 @time pf_result = pathfinder(ℓ; dim=d, init_scale);
-M = Diagonal(1 ./ sqrt.(diag(pf_result.fit_distribution.Σ)));
-struct LWrapper{T}
-    Σ::T
-end
-M = LWrapper(pf_result.fit_distribution.Σ)
+M = PDMats.PDiagMat(diag(pf_result.fit_distribution.Σ));
+M = pf_result.fit_distribution.Σ
 x0 = pf_result.fit_distribution.μ;
-v0 = PDMats.unwhiten(M.Σ, randn(length(x0)))
+v0 = PDMats.unwhiten(M, randn(length(x0)))
 
-function ZigZagBoomerang.reflect!(∇ϕx, x, v, F::BouncyParticle) # Seth's version
-    z = F.L.Σ * ∇ϕx
-    v .-= (2*dot(∇ϕx, v)/dot(∇ϕx, z)) * z
-    v
-end
-function ZigZagBoomerang.refresh!(rng, v, F::BouncyParticle)
-    ρ̄ = sqrt(1-F.ρ^2)
-    v .*= F.ρ
-    u = ρ̄*PDMats.unwhiten(F.L.Σ, randn(rng, length(v)))
-    v .+= u
-    v
-end
+
 
 
 
 MAP = pf_result.optim_solution; # MAP, could be useful for control variates
 
 # define BouncyParticle sampler (has two relevant parameters) 
-Z = BouncyParticle(∅, ∅, # ignored
+Z = BouncyParticle(missing, # Graphical structure 
+    MAP, # ignored
     2.0, # momentum refreshment rate and sample saving rate 
     0.95, # momentum correlation / only gradually change momentum in refreshment/momentum update
-    0.0, # ignored
-    M # cholesky of momentum precision
+    M, # metric
+    ∅
 ) 
 
 sampler = ZZB.NotFactSampler(Z, (dneglogp, ∇neglogp!), ZZB.LocalBound(c), t0 => (x0, v0), ZZB.Rng(ZZB.Seed()), (),
@@ -156,20 +143,20 @@ bps_chain = MCMCChains.Chains(bps_samples.θ)
 bps_chain = setinfo(bps_chain, (;start_time=0.0, stop_time = elapsed_time))
 
 μ̂1 = round.(mean(bps_chain).nt[:mean], sigdigits=4)
-print("μ̂ = ", μ̂1)
+println("μ̂ (BPS) = ", μ̂1)
 
 bps_chain
 
 using SampleChainsDynamicHMC
 init_params = pf_result.draws[:, 1]
 inv_metric = (pf_result.fit_distribution.Σ)
-hmc_time = @elapsed (hmc_samples = Tilde.sample(post, dynamichmc(
+hmc_time = @elapsed @time (hmc_samples = Tilde.sample(post, dynamichmc(
     ;init=(; q=init_params, κ=GaussianKineticEnergy(inv_metric)),
     warmup_stages=default_warmup_stages(; middle_steps=0, doubling_stages=0),
     ), 2000,1))
 hmc_chain = MCMCChains.Chains(hmc_samples.θ)
 μ̂2 = round.(mean(hmc_chain).nt[:mean], sigdigits=4)
-print("μ̂ = ", μ̂2)
+println("μ̂ (HMC) = ", μ̂2)
 hmc_chain = MCMCChains.setinfo(hmc_chain, (;start_time=0.0, stop_time = hmc_time))
 
 ess_bps = MCMCChains.ess_rhat(bps_chain).nt.ess_per_sec
