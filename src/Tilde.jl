@@ -103,6 +103,7 @@ include("primitives/testparams.jl")
 include("primitives/weightedsampling.jl")
 include("primitives/measures.jl")
 include("primitives/basemeasure.jl")
+include("primitives/predict.jl")
 
 include("transforms/utils.jl")
 
