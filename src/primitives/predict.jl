@@ -14,8 +14,8 @@ end
 
 @inline function predict(rng::AbstractRNG, m::AbstractConditionalModel, tv::TupleVector; ctx=NamedTuple())
     n = length(tv)
-    result = chainvec(predict(rng, m, tv[1]), n)
-    for j in 2:n
+    @inbounds result = chainvec(predict(rng, m, tv[1]), n)
+    @inbounds for j in 2:n
         result[j] = predict(rng, m, tv[1])
     end
     return result
