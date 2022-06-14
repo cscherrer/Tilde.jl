@@ -86,12 +86,12 @@ v0 = PDMats.unwhiten(M, randn(length(x0)))
 MAP = pf_result.optim_solution; # MAP, could be useful for control variates
 
 # define BouncyParticle sampler (has two relevant parameters) 
-Z = BouncyParticle(missing, # Graphical structure 
-    MAP, # ignored
+Z = BouncyParticle(missing, # graphical structure 
+    MAP, # MAP estimate, unused
     2.0, # momentum refreshment rate and sample saving rate 
     0.95, # momentum correlation / only gradually change momentum in refreshment/momentum update
-    M, # metric
-    ∅
+    M, # metric (PDMat compatible object for momentum covariance)
+    missing # legacy
 ) 
 
 sampler = ZZB.NotFactSampler(Z, (dneglogp, ∇neglogp!), ZZB.LocalBound(c), t0 => (x0, v0), ZZB.Rng(ZZB.Seed()), (),
