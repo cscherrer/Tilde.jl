@@ -16,7 +16,7 @@ end
 @inline function tilde(::typeof(weightedrand), lens, xname, x::Observed, d, cfg, ctx::NamedTuple)
     x = x.value
     xname = dynamic(xname)
-    Δℓ = logdensityof(d, x)
+    Δℓ = logdensityof(d, lens(x))
     @reset ctx.ℓ += Δℓ
     (x, ctx, ctx)
 end
