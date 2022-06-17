@@ -1,4 +1,4 @@
-struct Model{A,B,M<:GG.TypeLevel} <: AbstractModel{A,B,M}
+struct Model{A,B,M<:GG.TypeLevel,S} <: AbstractModel{A,B,M,S}
     args :: Vector{Symbol}
     body :: Expr
 end
@@ -8,7 +8,7 @@ function Model(theModule::Module, args::Vector{Symbol}, body::Expr)
 
     B = to_type(body)
     M = to_type(theModule)
-    return Model{A,B,M}(args, body)
+    return Model{A,B,M,PushforwardSupport}(args, body)
 end
 
 model(m::Model) = m
@@ -44,10 +44,10 @@ end
 
 Base.show(io::IO, m :: Model) = println(io, convert(Expr, m))
 
-function type2model(::Type{Model{A,B,M}}) where {A,B,M}
+function type2model(::Type{Model{A,B,M,S}}) where {A,B,M,S}
     args = [fieldnames(A)...]
     body = from_type(B)
-    Model(from_type(M), convert(Vector{Symbol},args), body)
+    Model{A,B,M,S}(from_type(M), convert(Vector{Symbol},args), body)
 end
 
 # julia> using Tilde, MeasureTheory

@@ -45,9 +45,9 @@ function make_body(M, f, ast::Expr, retfun, argsT, obsT, parsT)
                 # X = to_type(unsolved_lhs)
                 # M = to_type(unsolve(rhs))
 
-                inargs = inkeys(sx, argsT)
+                # inargs = inkeys(sx, argsT)
                 inobs = inkeys(sx, obsT)
-                inpars = inkeys(sx, parsT)
+                # inpars = inkeys(sx, parsT)
                 rhs = unsolve(rhs)
                 
                 xval = inobs ? :($Observed($x)) : (x ∈ knownvars ? :($Unobserved($x)) : :($Unobserved(missing)))
