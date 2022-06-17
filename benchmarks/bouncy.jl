@@ -1,10 +1,10 @@
-using Tilde
 import Pkg
-# Pkg.activate("benchmarks")
+#Pkg.activate("benchmarks")
+using Tilde
+using ProgressMeter
 using LinearAlgebra
 using Revise
 using ZigZagBoomerang
-using StatsFuns
 const ZZB = ZigZagBoomerang
 using LinearAlgebra
 const ∅ = nothing
@@ -12,146 +12,165 @@ using DelimitedFiles
 using Random
 using ForwardDiff
 using ForwardDiff: Dual
+using Pathfinder
+using Pathfinder.PDMats
+
 Random.seed!(1)
 
 # read data
 function readlrdata()
-    fname = joinpath("/home/chad/git/Turing.jl/benchmarks/nuts/lr_nuts.data")
+    fname = joinpath("lr.data")
     z = readdlm(fname)
-    x = z[:,1:end-1]
-    x = [ones(size(x,1)) x]
+    A = z[:,1:end-1]
+    A = [ones(size(A,1)) A]
     y = z[:,end] .- 1
-    return x, y
+    return A, y
 end
-x, y = readlrdata()
+A, y = readlrdata();
+At = collect(A');
 
-xt = collect(x')
-
-m = @model (xt, y, σ) begin
-    d,n = size(xt)
+model_lr = @model (At, y, σ) begin
+    d,n = size(At)
     θ ~ Normal(σ=σ)^d
     for j in 1:n
-        logitp = dot(view(xt,:,j), θ)
+        logitp = dot(view(At,:,j), θ)
         y[j] ~ Bernoulli(logitp = logitp)
     end
 end
-
 σ = 100.0
 
-post = m(xt,y, σ) | (;y)
-
-# using SampleChainsDynamicHMC
-
-# Tilde.sample(post, dynamichmc(), 2,1)
-
-# @time s = Tilde.sample(post, dynamichmc(), 1000, 1)
-
-ℓ(θ) = logdensityof(post, (;θ))
-obj(θ) = -ℓ(θ)
-
-function dneglogp(t, x, v, args...) # two directional derivatives
-    u = ForwardDiff.derivative(t -> obj(x + t*v), Dual{:hSrkahPmmC}(0.0, 1.0))
-    u.value, u.partials[]
+function make_grads(model_lr, At, y, σ)    
+    post = model_lr(At, y, σ) | (;y)
+    as_post = as(post)
+    obj(θ) = -Tilde.unsafe_logdensityof(post, transform(as_post, θ))
+    ℓ(θ) = -obj(θ)
+    @inline function dneglogp(t, x, v) # two directional derivatives
+        f(t) = obj(x + t*v)
+        u = ForwardDiff.derivative(f, Dual{:hSrkahPmmC}(0.0, 1.0))
+        u.value, u.partials[]
+    end
+    
+    gconfig = ForwardDiff.GradientConfig(obj, rand(25), ForwardDiff.Chunk{25}())
+    function ∇neglogp!(y, t, x)
+        ForwardDiff.gradient!(y, obj, x, gconfig)
+        return
+    end
+    post, ℓ, dneglogp, ∇neglogp!
 end
 
-function ∇neglogp!(y, t, x, args...)
-    ForwardDiff.gradient!(y, obj, x)
-    y
-end
-
+post, ℓ, dneglogp, ∇neglogp! = make_grads(model_lr, At, y, σ)  
 # Try things out
-# dneglogp(2.4, randn(25), randn(25))
-# ∇neglogp!(randn(25), 2.1, randn(25))
+dneglogp(2.4, randn(25), randn(25));
+∇neglogp!(randn(25), 2.1, randn(25));
 
 
-d = 1 + 24 # number of parameters 
-t0 = 0.0
-x0 = zeros(d) # starting point sampler
-T = 500. # end time (similar to number of samples in MCMC)
-c = 5.0 # initial guess for the bound
-#M = I
-M = Diagonal(1 ./ [1.7, 0.08, 0.01, 0.09, 0.01, 0.06, 0.08, 0.12, 0.09, 0.11, 0.01, 0.11, 0.18, 0.29, 0.21, 0.88, 0.21, 0.39, 0.44, 0.65, 0.4, 0.35, 0.6, 0.31, 0.3])
-θ0 = M\randn(d) # starting direction sampler
+d = 25 # number of parameters 
+t0 = 0.0;
+x0 = zeros(d); # starting point sampler
+# estimated posterior mean (n=100000, 797s)
+μ̂ = [3.406, -0.5918, 0.0352, -0.3874, 0.004481, -0.2346, -0.1495, -0.2184, 0.01219, 0.1731, -0.00976, -0.3224, 0.2168, 0.08002, -0.2829, -1.581, 0.6666, -0.9984, 1.081, 1.405, 0.327, -0.1357, -0.6446, -0.06583, -0.04994]
+n = 2000
+c = 4.0 # initial guess for the bound
+
+init_scale=1;
+@time pf_result = pathfinder(ℓ; dim=d, init_scale);
+M = PDMats.PDiagMat(diag(pf_result.fit_distribution.Σ));
+M = pf_result.fit_distribution.Σ;
+x0 = pf_result.fit_distribution.μ;
+v0 = PDMats.unwhiten(M, randn(length(x0)));
+
+
+
+
+
+MAP = pf_result.optim_solution; # MAP, could be useful for control variates
 
 # define BouncyParticle sampler (has two relevant parameters) 
-Z = BouncyParticle(∅, ∅, # ignored
-    2.0, # momentum refreshment rate 
+Z = BouncyParticle(missing, # graphical structure 
+    MAP, # MAP estimate, unused
+    2.0, # momentum refreshment rate and sample saving rate 
     0.95, # momentum correlation / only gradually change momentum in refreshment/momentum update
-    0.0, # ignored
-    M # cholesky of momentum precision
-) 
+    M, # metric (PDMat compatible object for momentum covariance)
+    missing # legacy
+) ;
 
-sampler = ZZB.NotFactSampler(Z, (dneglogp, ∇neglogp!), ZZB.LocalBound(c), t0 => (x0, θ0), ZZB.Rng(ZZB.Seed()),
-(), (;adapt=true, # adapt bound c
-subsample=true, # keep only samples at refreshment times
-))
+sampler = ZZB.NotFactSampler(Z, (dneglogp, ∇neglogp!), ZZB.LocalBound(c), t0 => (x0, v0), ZZB.Rng(ZZB.Seed()), (),
+(;  adapt=true, # adapt bound c
+    subsample=true, # keep only samples at refreshment times
+));
 
-let
-ϕ = iterate(sampler)
-while ϕ !== nothing
-    val, state = ϕ
-    val[1]> 1 && break
-    println(val[1])
-    ϕ = iterate(sampler, state)
-end
-end
 
-function collect_sampler(t, sampler, n)
+using TupleVectors: chainvec
+using Tilde.MeasureTheory: transform
+
+
+function collect_sampler(t, sampler, n; progress=true, progress_stops=20)
+    if progress
+        prg = Progress(progress_stops, 1)
+    else
+        prg = missing
+    end
+    stops = ismissing(prg) ? 0 : max(prg.n - 1, 0) # allow one stop for cleanup
+    nstop = n/stops
+
     x1 = transform(t, sampler.u0[2][1])
     tv = chainvec(x1, n)
     ϕ = iterate(sampler)
     j = 1
+    local state
     while ϕ !== nothing && j < n
         j += 1
         val, state = ϕ
         tv[j] = transform(t, val[2])
         ϕ = iterate(sampler, state)
+        if j > nstop
+            nstop += n/stops
+            next!(prg) 
+        end 
     end
-    tv
+    ismissing(prg) || ProgressMeter.finish!(prg)
+    tv, (;uT=state[1], acc=state[3][1], total=state[3][2], bound=state[4].c)
 end
-tv = @time collect_sampler(as(post), sampler, length(x))
+collect_sampler(as(post), sampler, 10; progress=false);
 
-
-
-trace, final, (acc, num), cs = @time pdmp(
-        dneglogp, # return first two directional derivatives of negative target log-likelihood in direction v
-        ∇neglogp!, # return gradient of negative target log-likelihood
-        t0, x0, θ0, T, # initial state and duration
-        ZZB.LocalBound(c), # use Hessian information 
-        Z; # sampler
-        adapt=true, # adapt bound c
-        progress=true, # show progress bar
-        subsample=true # keep only samples at refreshment times
-)
-
-
-t, x = ZigZagBoomerang.sep(trace)
-
-
-
-using TupleVectors: chainvec
-using MeasureTheory: transform
-function tuplevector(t, x::Vector{Vector{T}}) where {T}
-    x1 = transform(t, x[2])
-    tv = chainvec(x1, length(x))
-    for j in 2:length(x)
-        tv[j] = transform(t, x[j])
-    end
-    return tv
+elapsed_time = @elapsed @time begin
+    global bps_samples, info 
+    bps_samples, info = collect_sampler(as(post), sampler, n; progress=false)
 end
 
-tv = tuplevector(as(post), x)
+using MCMCChains
+bps_chain = MCMCChains.Chains(bps_samples.θ);
+bps_chain = setinfo(bps_chain, (;start_time=0.0, stop_time = elapsed_time));
 
+μ̂1 = round.(mean(bps_chain).nt[:mean], sigdigits=4)
+println("μ̂ (BPS) = ", μ̂1)
 
+using SampleChainsDynamicHMC
+init_params = pf_result.draws[:, 1];
+inv_metric = (pf_result.fit_distribution.Σ);
+Tilde.sample(post, dynamichmc(
+    ;init=(; q=init_params, κ=GaussianKineticEnergy(inv_metric)),
+    warmup_stages=default_warmup_stages(; middle_steps=0, doubling_stages=0),
+    ), 1,1);
+hmc_time = @elapsed @time (hmc_samples = Tilde.sample(post, dynamichmc(
+    ;init=(; q=init_params, κ=GaussianKineticEnergy(inv_metric)),
+    warmup_stages=default_warmup_stages(; middle_steps=0, doubling_stages=0),
+    ), 2000,1));
+hmc_chain = MCMCChains.Chains(hmc_samples.θ);
+μ̂2 = round.(mean(hmc_chain).nt[:mean], sigdigits=4);
+println("μ̂ (HMC) = ", μ̂2)
+hmc_chain = MCMCChains.setinfo(hmc_chain, (;start_time=0.0, stop_time = hmc_time));
 
-# bps_chain = MCMCChains.Chains([xj[i] for xj in x[end÷4:end], i in 1:d])
-# bps_chain = setinfo(bps_chain,  (;start_time=0.0, stop_time = elapsed_time))
-# bps_chain
+ess_bps = MCMCChains.ess_rhat(bps_chain).nt.ess_per_sec;
+ess_hmc = MCMCChains.ess_rhat(hmc_chain).nt.ess_per_sec;
 
-# # for BPS
-# using Pathfinder
-# init_scale=1
-# @time result = pathfinder(x->-neglogp(x); dim=d, init_scale)
-# M = Diagonal(1 ./ sqrt.(diag(result.fit_distribution.Σ)))
-# x0 = result.fit_distribution.μ
-# θ0 = M\randn(d) # starting direction sampler
+using UnicodePlots
+
+plt = scatterplot(ess_bps, ess_hmc);
+UnicodePlots.title!(plt, "Effective Samples Per Second");
+xlabel!(plt, "Bouncy Particle Sampler");
+ylabel!(plt, "DynamicHMC");
+plt_bounds = collect(extrema(ess_hmc));
+lineplot!(plt, plt_bounds, plt_bounds);
+plt
+@info "For each coordinate, a point (x,y) shows the effective sample size per second for BPS (x) and HMC (y) . In blue is the diagonal x=y"
