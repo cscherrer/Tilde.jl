@@ -79,11 +79,8 @@ M = pf_result.fit_distribution.Σ;
 x0 = pf_result.fit_distribution.μ;
 v0 = PDMats.unwhiten(M, randn(length(x0)));
 
-
-
-
-
 MAP = pf_result.optim_solution; # MAP, could be useful for control variates
+
 
 # define BouncyParticle sampler (has two relevant parameters) 
 Z = BouncyParticle(missing, # graphical structure 
@@ -103,6 +100,7 @@ sampler = ZZB.NotFactSampler(Z, (dneglogp, ∇neglogp!), ZZB.LocalBound(c), t0 =
 using TupleVectors: chainvec
 using Tilde.MeasureTheory: transform
 
+# @time first(Iterators.drop(tvs,1000))
 
 function collect_sampler(t, sampler, n; progress=true, progress_stops=20)
     if progress
@@ -174,3 +172,4 @@ plt_bounds = collect(extrema(ess_hmc));
 lineplot!(plt, plt_bounds, plt_bounds);
 plt
 @info "For each coordinate, a point (x,y) shows the effective sample size per second for BPS (x) and HMC (y) . In blue is the diagonal x=y"
+
