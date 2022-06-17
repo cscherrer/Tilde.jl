@@ -7,7 +7,6 @@ using Optim
 using ZigZagBoomerang
 const ZZB = ZigZagBoomerang
 using LinearAlgebra
-const ∅ = nothing
 using DelimitedFiles
 using Random
 using ForwardDiff
