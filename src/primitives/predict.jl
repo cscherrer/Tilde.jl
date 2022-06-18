@@ -12,18 +12,17 @@ end
     return predict(f, m, pars)
 end
 
-
-@inline function predict(f, m::AbstractConditionalModel, pars::NamedTuple; ctx=NamedTuple())
+@inline function predict(f, m::AbstractConditionalModel, pars::NamedTuple)
     cfg = (f=f, pars=pars)
     ctx = NamedTuple()
     gg_call(predict, m, pars, cfg, ctx, (r, ctx) -> r)
 end
 
-@inline function predict(f, m::AbstractConditionalModel, tv::TupleVector; ctx=NamedTuple())
+@inline function predict(f, m::AbstractConditionalModel, tv::TupleVector)
     n = length(tv)
     @inbounds result = chainvec(predict(f, m, tv[1]), n)
     @inbounds for j in 2:n
-        result[j] = predict(f, m, tv[1])
+        result[j] = predict(f, m, tv[j])
     end
     return result
 end
@@ -44,8 +43,7 @@ end
         quote
             # @info "$X ∉ N"
             x = x.value
-            
-            xnew = set(x, Lens!!(lens), f(d, lens(x)))
+            xnew = set(copy(x), Lens!!(lens), f(d, lens(x)))
             ctx = merge(ctx, NamedTuple{(X,)}((xnew,)))
             (xnew, ctx, ctx)
         end
