@@ -13,7 +13,17 @@ using ForwardDiff
 using ForwardDiff: Dual
 using ZigZagBoomerang.PDMats
 using MappedArrays
+struct LazyRand{T,R}
+    sampler::T
+    n::Int
+    rng::R
+end
 
+Base.iterate(iter::LazyRand) = iter.n > 0 ?  (rand(iter.rng, iter.sampler),iter.n-1) : nothing
+Base.iterate(iter::LazyRand, n) = n > 0 ? (rand(iter.rng, iter.sampler), n-1) : nothing
+lazyrand(rng, r::UnitRange, n) = LazyRand(Random.SamplerRangeNDL(r), n, rng)
+lazyrand(r::UnitRange, n) = LazyRand(Random.SamplerRangeNDL(r), n, Random.GLOBAL_RNG)
+Base.length(iter::LazyRand) = iter.n
 N = 100000 # no. observations
 C = 400 # no. covariates
 Random.seed!(1)
@@ -36,10 +46,7 @@ ss_model = @model N1, C, A, K, seed, y begin
     α ~ Normal()
     cc ~ Normal()^C
     # but random subset of observations
-    sampler = Random.SamplerRangeNDL(1:N1)
-    rng = ZZB.Rng(seed)
-    for _ in 1:K
-        i = rand(rng, sampler) # each index expected to be sampled (K/N)*n times in n calls
+    for i in lazyrand(ZZB.Rng(seed), 1:N1, K)
         v = α + cc[A[i]]
         y[i] ~ Bernoulli(logitp = v) ↑ (N/K) # increase weight by power (N/K) 
     end
