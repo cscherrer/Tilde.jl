@@ -83,7 +83,6 @@ end
 include("optics.jl")
 include("maybe.jl")
 include("core/models/abstractmodel.jl")
-include("core/models/astmodel/astmodel.jl")
 include("core/models/model.jl")
 include("core/dependencies.jl")
 include("core/utils.jl")
