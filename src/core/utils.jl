@@ -110,15 +110,6 @@ end
 import MacroTools: striplines, @q
 
 
-
-
-# function arguments(model::DAGModel)
-#     model.args
-# end
-
-
-
-
 allequal(xs) = all(xs[1] .== xs)
 
 
