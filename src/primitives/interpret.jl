@@ -45,13 +45,21 @@ function make_body(M, f, ast::Expr, retfun, argsT, obsT, parsT)
                 # X = to_type(unsolved_lhs)
                 # M = to_type(unsolve(rhs))
 
-                inargs = inkeys(sx, argsT)
+                # inargs = inkeys(sx, argsT)
                 inobs = inkeys(sx, obsT)
-                inpars = inkeys(sx, parsT)
+                # inpars = inkeys(sx, parsT)
                 rhs = unsolve(rhs)
                 
-                xval = inobs ? :($Observed($x)) : (x ∈ knownvars ? :($Unobserved($x)) : :($Unobserved(missing)))
+                xval = if inkeys(sx, obsT)
+                    :($Observed($x))
+                elseif x ∈ knownvars 
+                    :($Unobserved($x)) 
+                else 
+                    :($Unobserved(missing))
+                end
+     
                 st = :(($x, _ctx, _retn) = $tilde($f, $l, $sx, $xval, $rhs, _cfg, _ctx))
+     
                 qst = QuoteNode(st)
                 q = quote
                     # println($qst)
