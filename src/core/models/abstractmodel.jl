@@ -3,12 +3,6 @@
 # struct MixedSupport <: ValueSupport end
 # struct MixedVariate <: VariateForm end
 
-abstract type ModelSupport end
-
-struct LatentSupport <: ModelSupport end
-struct PushforwardSupport <: ModelSupport end
-struct JointSupport <: ModelSupport end
-
 """
     AbstractModel{A,B}
 
