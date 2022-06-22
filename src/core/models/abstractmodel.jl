@@ -15,7 +15,7 @@ N gives the Names of arguments (each a Symbol)
 B gives the Body, as an Expr
 M gives the Module where the model is defined
 """
-abstract type AbstractModel{A,B,M,F} <: AbstractTransitionKernel end
+abstract type AbstractModel{A,B,M} <: AbstractTransitionKernel end
 
 abstract type AbstractConditionalModel{M, Args, Obs} <: AbstractMeasure end
 
