@@ -1,7 +1,6 @@
-struct Model{A,B,M<:GG.TypeLevel,F} <: AbstractModel{A,B,M,F}
+struct Model{A,B,M<:GG.TypeLevel} <: AbstractModel{A,B,M}
     args :: Vector{Symbol}
     body :: Expr
-    f    :: F
 end
 
 function Model(theModule::Module, args::Vector{Symbol}, body::Expr)
