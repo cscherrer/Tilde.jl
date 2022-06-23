@@ -1,6 +1,7 @@
 [deps]
 ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210"
 MCMCChains = "c7f686f2-ff18-58e9-bc7b-31028e88f75d"
+MappedArrays = "dbb5928d-eab1-5f90-85c2-b9b0edb7c900"
 Optim = "429524aa-4258-5aef-a3af-852621145aeb"
 Pathfinder = "b1d3bc72-d0e7-4279-b92f-7fa5d6d2d454"
 ProgressMeter = "92933f4c-e287-5a05-a399-4b506db050ca"

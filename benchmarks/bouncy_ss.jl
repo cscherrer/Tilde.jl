@@ -99,7 +99,7 @@ MAP = opt_result.minimizer
 
 # Sample
 K = 500 # number of observations sampled for stochastic gradient
-dneglogp, ∇neglogp! = make_grads(full_ss_model, ss_model, N, C, A, MAP, ∇MAP, K, data.y)  
+dneglogp, ∇neglogp! = make_grads(full_model, ss_model, N, C, A, MAP, ∇MAP, K, data.y)  
 
 
 t0 = 0.0;
