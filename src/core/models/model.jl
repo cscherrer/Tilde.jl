@@ -5,10 +5,9 @@ end
 
 function Model(theModule::Module, args::Vector{Symbol}, body::Expr)
     A = NamedTuple{Tuple(args)}
-
     B = to_type(body)
     M = to_type(theModule)
-    return Model{A,B,M,typeof(last)}(args, body, last)
+    return Model{A,B,M}(args, body)
 end
 
 model(m::Model) = m
@@ -38,10 +37,10 @@ end
 
 Base.show(io::IO, m :: Model) = println(io, convert(Expr, m))
 
-function type2model(::Type{Model{A,B,M}}) where {A,B,M,S}
-    args = [fieldnames(A)...]
+function type2model(::Type{Model{A,B,M}}) where {A,B,M}
+    args = Symbol[fieldnames(A)...]
     body = from_type(B)
-    Model{A,B,M}(from_type(M), convert(Vector{Symbol},args), body)
+    Model{A,B,M}(args, body)
 end
 
 toargs(vs :: Vector{Symbol}) = Tuple(vs)
