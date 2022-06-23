@@ -43,8 +43,7 @@ end
     rand(GLOBAL_RNG, m; kwargs...)
 end
 
-@inline function Base.rand(rng::AbstractRNG, m::ModelClosure; ctx=NamedTuple(), retfun = (r, ctx) -> r)
-    cfg = (rng=rng,)
+@inline Base.rand(rng::AbstractRNG, m::ModelClosure) = rand(rng, Float64, m)
 
 @inline function Base.rand(rng::AbstractRNG, ::Type{T_rng}, m::ModelClosure; ctx=NamedTuple(), retfun = (r, ctx) -> r) where {T_rng}
     cfg = (rng=rng, T_rng=T_rng)
