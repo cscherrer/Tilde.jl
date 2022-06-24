@@ -60,15 +60,17 @@ model_lr = @model (At, y, σ) begin
     end
 end
 
+# Define model arguments
 A, y = readlrdata();
 At = collect(A');
 σ = 100.0
 
-
+# Represent the posterior
 post = model_lr(At, y, σ) | (;y)
 
-d = as(post).dimension
+d = TV.dimension(as(post))
 
+# Make sure gradients are working
 let
     ℓ, dneglogp, ∇neglogp! = make_grads(post)  
     # Try things out
