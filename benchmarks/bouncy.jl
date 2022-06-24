@@ -17,30 +17,7 @@ using Pathfinder.PDMats
 
 Random.seed!(1)
 
-# read data
-function readlrdata()
-    fname = joinpath("lr.data")
-    z = readdlm(fname)
-    A = z[:,1:end-1]
-    A = [ones(size(A,1)) A]
-    y = z[:,end] .- 1
-    return A, y
-end
-A, y = readlrdata();
-At = collect(A');
-
-model_lr = @model (At, y, σ) begin
-    d,n = size(At)
-    θ ~ Normal(σ=σ)^d
-    for j in 1:n
-        logitp = dot(view(At,:,j), θ)
-        y[j] ~ Bernoulli(logitp = logitp)
-    end
-end
-σ = 100.0
-
-function make_grads(model_lr, At, y, σ)    
-    post = model_lr(At, y, σ) | (;y)
+function make_grads(post)    
     as_post = as(post)
     obj(θ) = -Tilde.unsafe_logdensityof(post, transform(as_post, θ))
     ℓ(θ) = -obj(θ)
@@ -53,18 +30,55 @@ function make_grads(model_lr, At, y, σ)
     gconfig = ForwardDiff.GradientConfig(obj, rand(25), ForwardDiff.Chunk{25}())
     function ∇neglogp!(y, t, x)
         ForwardDiff.gradient!(y, obj, x, gconfig)
-        return
+        y
     end
-    post, ℓ, dneglogp, ∇neglogp!
+    ℓ, dneglogp, ∇neglogp!
 end
 
-post, ℓ, dneglogp, ∇neglogp! = make_grads(model_lr, At, y, σ)  
-# Try things out
-dneglogp(2.4, randn(25), randn(25));
-∇neglogp!(randn(25), 2.1, randn(25));
+
+# ↑ general purpose
+############################################################
+# ↓ problem-specific
+
+# read data
+function readlrdata()
+    fname = joinpath("lr.data")
+    z = readdlm(fname)
+    A = z[:,1:end-1]
+    A = [ones(size(A,1)) A]
+    y = z[:,end] .- 1
+    return A, y
+end
 
 
-d = 25 # number of parameters 
+model_lr = @model (At, y, σ) begin
+    d,n = size(At)
+    θ ~ Normal(σ=σ)^d
+    for j in 1:n
+        logitp = view(At,:,j)' * θ
+        y[j] ~ Bernoulli(logitp = logitp)
+    end
+end
+
+A, y = readlrdata();
+At = collect(A');
+σ = 100.0
+
+
+post = model_lr(At, y, σ) | (;y)
+
+d = as(post).dimension
+
+let
+    ℓ, dneglogp, ∇neglogp! = make_grads(post)  
+    # Try things out
+    @show dneglogp(2.4, randn(d), randn(d));
+    y = Vector{Float64}(undef, d)
+    @show ∇neglogp!(y, 2.1, randn(d));
+    nothing
+end
+
+
 t0 = 0.0;
 x0 = zeros(d); # starting point sampler
 # estimated posterior mean (n=100000, 797s)
