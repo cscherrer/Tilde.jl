@@ -19,6 +19,7 @@ Random.seed!(1)
 
 function make_grads(post)    
     as_post = as(post)
+    d = TV.dimension(as_post)
     obj(θ) = -Tilde.unsafe_logdensityof(post, transform(as_post, θ))
     ℓ(θ) = -obj(θ)
     @inline function dneglogp(t, x, v) # two directional derivatives
@@ -27,7 +28,7 @@ function make_grads(post)
         u.value, u.partials[]
     end
     
-    gconfig = ForwardDiff.GradientConfig(obj, rand(25), ForwardDiff.Chunk{25}())
+    gconfig = ForwardDiff.GradientConfig(obj, rand(d), ForwardDiff.Chunk{d}())
     function ∇neglogp!(y, t, x)
         ForwardDiff.gradient!(y, obj, x, gconfig)
         y
@@ -73,7 +74,6 @@ d = TV.dimension(as(post))
 # Make sure gradients are working
 let
     ℓ, dneglogp, ∇neglogp! = make_grads(post)  
-    # Try things out
     @show dneglogp(2.4, randn(d), randn(d));
     y = Vector{Float64}(undef, d)
     @show ∇neglogp!(y, 2.1, randn(d));
