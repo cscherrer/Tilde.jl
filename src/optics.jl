@@ -35,10 +35,21 @@ end
 
 @inline function Accessors.set(o, l::Lens!!{<:IndexLens}, val)
     if ismutable(o)
-        setindex!(o, val, l.pure.indices...)
+        _setindex!(o, val, l.pure.indices...)
     else
         Base.setindex(o, val, l.pure.indices...)
     end
+end
+
+@inline function _setindex!(o::AbstractArray{T}, val::T, l::Lens!!{<:IndexLens}) where {T}
+    setindex!(o, val, l.pure.indices...)
+end
+
+# Attempting to set a value outside the current eltype widens the eltype
+@inline function _setindex!(o::AbstractArray{T}, val::V, l::Lens!!{<:IndexLens}) where {T,V}
+    new_o = similar(o, Union{T,V})
+    new_o .= o
+    setindex!(new_o, val, l.pure.indices...)
 end
 
 @inline function Accessors.modify(f, o, l::Lens!!)
