@@ -31,7 +31,7 @@ end
     tilde_predict(cfg.f, lens, xname, x, d, cfg.pars, ctx)
 end
 
-@generated function tilde_predict(f, lens, ::StaticSymbol{X}, x, d, pars::NamedTuple{N}, ctx) where {X,N}
+@generated function tilde_predict(f, lens, ::StaticSymbol{X}, x::Observed, d, pars::NamedTuple{N}, ctx) where {X,N}
     if X ∈ N
         quote
             # @info "$X ∈ N"
@@ -50,3 +50,21 @@ end
     end
 end
 
+@generated function tilde_predict(f, lens, ::StaticSymbol{X}, x::Unobserved, d, pars::NamedTuple{N}, ctx) where {X,N}
+    if X ∈ N
+        quote
+            # @info "$X ∈ N"
+            xnew = set(x.value, Lens!!(lens), lens(getproperty(pars, X)))
+            # ctx = merge(ctx, NamedTuple{(X,)}((xnew,)))
+            (xnew, ctx, ctx)
+        end
+    else
+        quote
+            # @info "$X ∉ N"
+            # In this case x == Unobserved(missing)
+            xnew = set(x, Lens!!(lens), f(d, missing))
+            ctx′ = merge(ctx, NamedTuple{(X,)}((xnew,)))
+            (xnew, ctx′, nothing)
+        end
+    end
+end

@@ -22,6 +22,13 @@ struct Unobserved{T}
     value::T
 end
 
+call(f, g, args...) = g(args...)
+
+call(f, g, ::Missing, args...) = missing
+call(f, g, _, ::Missing, args...) = missing
+call(f, g, _, _, ::Missing, args...) = missing
+call(f, g, _, _, _, ::Missing, args...) = missing
+call(f, g, _, _, _, _, ::Missing, args...) = missing
 
 function make_body(M, f, ast::Expr, retfun, argsT, obsT, parsT) 
     knownvars = union(keys.(schema.((argsT, obsT, parsT)))...)
@@ -68,6 +75,12 @@ function make_body(M, f, ast::Expr, retfun, argsT, obsT, parsT)
                 end
 
                 q
+            end
+
+            :($g($(args...); $(kwargs...))) => begin
+                quote
+                    $call($f, $g, $(args...); $(kwargs...))
+                end
             end
 
             :(return $r) => :(return $retfun($r, _ctx))
