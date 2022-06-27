@@ -22,7 +22,7 @@ function make_grads(post)
     d = TV.dimension(as_post)
     obj(θ) = -Tilde.unsafe_logdensityof(post, transform(as_post, θ))
     ℓ(θ) = -obj(θ)
-    @inline function dneglogp(t, x, v) # two directional derivatives
+    @inline function dneglogp(t, x, v, args…) # two directional derivatives
         f(t) = obj(x + t*v)
         u = ForwardDiff.derivative(f, Dual{:hSrkahPmmC}(0.0, 1.0))
         u.value, u.partials[]
