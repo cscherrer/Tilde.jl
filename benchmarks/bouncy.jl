@@ -14,6 +14,9 @@ using ForwardDiff
 using ForwardDiff: Dual
 using Pathfinder
 using Pathfinder.PDMats
+using MCMCChains
+using TupleVectors: chainvec
+using Tilde.MeasureTheory: transform
 
 Random.seed!(1)
 
@@ -22,14 +25,14 @@ function make_grads(post)
     d = TV.dimension(as_post)
     obj(θ) = -Tilde.unsafe_logdensityof(post, transform(as_post, θ))
     ℓ(θ) = -obj(θ)
-    @inline function dneglogp(t, x, v, args…) # two directional derivatives
+    @inline function dneglogp(t, x, v, args...) # two directional derivatives
         f(t) = obj(x + t*v)
         u = ForwardDiff.derivative(f, Dual{:hSrkahPmmC}(0.0, 1.0))
         u.value, u.partials[]
     end
     
     gconfig = ForwardDiff.GradientConfig(obj, rand(d), ForwardDiff.Chunk{d}())
-    function ∇neglogp!(y, t, x, args…)
+    function ∇neglogp!(y, t, x, args...)
         ForwardDiff.gradient!(y, obj, x, gconfig)
         y
     end
@@ -113,9 +116,6 @@ sampler = ZZB.NotFactSampler(Z, (dneglogp, ∇neglogp!), ZZB.LocalBound(c), t0 =
 ));
 
 
-using TupleVectors: chainvec
-using Tilde.MeasureTheory: transform
-
 # @time first(Iterators.drop(tvs,1000))
 
 function collect_sampler(t, sampler, n; progress=true, progress_stops=20)
@@ -152,7 +152,7 @@ elapsed_time = @elapsed @time begin
     bps_samples, info = collect_sampler(as(post), sampler, n; progress=false)
 end
 
-using MCMCChains
+
 bps_chain = MCMCChains.Chains(bps_samples.θ);
 bps_chain = setinfo(bps_chain, (;start_time=0.0, stop_time = elapsed_time));
 
