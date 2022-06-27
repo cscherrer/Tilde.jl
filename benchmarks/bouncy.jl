@@ -29,7 +29,7 @@ function make_grads(post)
     end
     
     gconfig = ForwardDiff.GradientConfig(obj, rand(d), ForwardDiff.Chunk{d}())
-    function ∇neglogp!(y, t, x)
+    function ∇neglogp!(y, t, x, args…)
         ForwardDiff.gradient!(y, obj, x, gconfig)
         y
     end
