@@ -35,7 +35,7 @@ end
 
 @inline function Accessors.set(o, l::Lens!!{<:IndexLens}, val)
     if ismutable(o)
-        _setindex!(o, val, l.pure.indices...)
+        _setindex!(o, val, l)
     else
         Base.setindex(o, val, l.pure.indices...)
     end
