@@ -79,7 +79,7 @@ include("callify.jl")
         For{$T,GG.Closure{F,Free},I}(f, inds)
     end
 end
-
+include("maybeobserved.jl")
 include("optics.jl")
 include("maybe.jl")
 include("core/models/abstractmodel.jl")
