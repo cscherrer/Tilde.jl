@@ -14,13 +14,9 @@ function make_body(M, f, m::AbstractModel)
     make_body(M, body(m))
 end
 
-struct Observed{T}
-    value::T
-end
 
-struct Unobserved{T}
-    value::T
-end
+call(f, g, args...; kwargs...) = g(args...; kwargs...)
+
 
 call(f, g, args...) = g(args...)
 
@@ -57,17 +53,9 @@ function make_body(M, f, ast::Expr, retfun, argsT, obsT, parsT)
                 # inpars = inkeys(sx, parsT)
                 rhs = unsolve(rhs)
                 
-                xval = if inkeys(sx, obsT)
-                    :($Observed($x))
-                elseif x ∈ knownvars 
-                    :($Unobserved($x)) 
-                else 
-                    :($Unobserved(missing))
-                end
-     
-                st = :(($x, _ctx, _retn) = $tilde($f, $l, $sx, $xval, $rhs, _cfg, _ctx))
-     
-                qst = QuoteNode(st)
+                obj = inobs ? :($Observed{$qx}($x)) : (x ∈ knownvars ? :($Unobserved{$qx}($x)) : :($Unobserved{$qx}(missing)))
+                st = :(($x, _ctx, _retn) = $tilde($f, $obj, $l, $rhs, _cfg, _ctx))
+                # qst = QuoteNode(st)
                 q = quote
                     # println($qst)
                     $st
@@ -77,11 +65,7 @@ function make_body(M, f, ast::Expr, retfun, argsT, obsT, parsT)
                 q
             end
 
-            :($g($(args...); $(kwargs...))) => begin
-                quote
-                    $call($f, $g, $(args...); $(kwargs...))
-                end
-            end
+            :($g($(args...); $(kwargs...))) => :(call($f, $g, $(args...); $(kwargs...)))
 
             :(return $r) => :(return $retfun($r, _ctx))
             
