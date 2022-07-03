@@ -17,15 +17,6 @@ end
 
 call(f, g, args...; kwargs...) = g(args...; kwargs...)
 
-
-call(f, g, args...) = g(args...)
-
-call(f, g, ::Missing, args...) = missing
-call(f, g, _, ::Missing, args...) = missing
-call(f, g, _, _, ::Missing, args...) = missing
-call(f, g, _, _, _, ::Missing, args...) = missing
-call(f, g, _, _, _, _, ::Missing, args...) = missing
-
 function make_body(M, f, ast::Expr, retfun, argsT, obsT, parsT) 
     knownvars = union(keys.(schema.((argsT, obsT, parsT)))...)
     function go(ex, scope=(bounds = Var[], freevars = Var[], bound_inits = Symbol[]))
