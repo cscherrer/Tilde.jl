@@ -25,28 +25,12 @@ end
 
 ###############################################################################
 # ctx::NamedTuple
-@inline function tilde(::typeof(Base.rand), lens, xname, x::Unobserved, d, cfg, ctx::NamedTuple)
-    xnew = set(x.value, Lens!!(lens), rand(cfg.rng, d))
-    ctx′ = merge(ctx, NamedTuple{(dynamic(xname),)}((xnew,)))
+@inline function tilde(::typeof(Base.rand), x::Unobserved{X}, lens, d, cfg, ctx::NamedTuple) where {X}
+    xnew = set(value(x), Lens!!(lens), rand(cfg.rng, d))
+    ctx′ = merge(ctx, NamedTuple{(X,)}((xnew,)))
     (xnew, ctx′, nothing)
 end
 
-@inline function tilde(::typeof(Base.rand), lens, xname, x::Observed, d, cfg, ctx::NamedTuple)
-    (x.value, ctx, nothing)
-end
-
-
-###############################################################################
-# ctx::Dict
-
-@inline function tilde(::typeof(Base.rand), lens::typeof(identity), xname, x, d, cfg, ctx::Dict)
-    x = rand(cfg.rng, d)
-    ctx[dynamic(xname)] = x 
-    (x, ctx, nothing)
-end
-
-@inline function tilde(::typeof(Base.rand), lens, xname, x, m::AbstractConditionalModel, cfg, ctx::Dict)
-    args = get(cfg.args, dynamic(xname), Dict())
-    cfg = merge(cfg, (args = args,))
-    tilde(rand, lens, xname, x, m(cfg.args), cfg, ctx)
+@inline function tilde(::typeof(Base.rand), x::Observed{X}, lens, d, cfg, ctx::NamedTuple) where {X}
+    (value(x), ctx, nothing)
 end

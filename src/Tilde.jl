@@ -68,7 +68,7 @@ _unwrap_type(a::Type{<:Type}) = a.parameters[1]
 export model, Model, tilde, @model
 
 using MLStyle
-include("callify.jl")
+# include("callify.jl")
 
 @generated function MeasureTheory.For(f::GG.Closure{F,Free}, inds::I) where {F,Free,I<:Tuple}
     freetypes = Free.types
@@ -79,7 +79,7 @@ include("callify.jl")
         For{$T,GG.Closure{F,Free},I}(f, inds)
     end
 end
-include("maybeobserved.jl")
+
 include("optics.jl")
 include("maybe.jl")
 include("core/models/abstractmodel.jl")
@@ -88,6 +88,7 @@ include("core/models/model.jl")
 include("core/dependencies.jl")
 include("core/utils.jl")
 include("core/models/closure.jl")
+include("maybeobserved.jl")
 include("core/models/posterior.jl")
 include("primitives/interpret.jl")
 include("distributions/iid.jl")
@@ -97,7 +98,6 @@ include("primitives/logdensity.jl")
 include("primitives/logdensity_rel.jl")
 include("primitives/insupport.jl")
 
-# include("primitives/basemeasure.jl")
 include("primitives/testvalue.jl")
 include("primitives/testparams.jl")
 include("primitives/weightedsampling.jl")

@@ -8,12 +8,12 @@ EmptyNTtype = NamedTuple{(),Tuple{}} where T<:Tuple
     gg_call(testvalue, mc, NamedTuple(), cfg, ctx, (r, ctx) -> r)
 end
 
-@inline function tilde(::typeof(testvalue), lens, xname, x::Unobserved, d, cfg, ctx::NamedTuple)
-    xnew = set(x.value, Lens!!(lens), testvalue(d))
-    ctx′ = merge(ctx, NamedTuple{(dynamic(xname),)}((xnew,)))
+@inline function tilde(::typeof(testvalue), x::Unobserved{X}, lens, d, cfg, ctx::NamedTuple) where {X}
+    xnew = set(value(x), Lens!!(lens), testvalue(d))
+    ctx′ = merge(ctx, NamedTuple{(X,)}((xnew,)))
     (xnew, ctx′, nothing)
 end
 
-@inline function tilde(::typeof(testvalue), lens, xname, x::Observed, d, cfg, ctx::NamedTuple)
-    (x.value, ctx, nothing)
+@inline function tilde(::typeof(testvalue), x::Observed{X}, lens, d, cfg, ctx::NamedTuple) where {X}
+    (value(x), ctx, nothing)
 end
