@@ -166,28 +166,6 @@ allequal(xs) = all(xs[1] .== xs)
 # @__MODULE__
 # names
 
-# getprototype(::Type{NamedTuple{(),Tuple{}}}) = NamedTuple()
-getprototype(::Type{NamedTuple{N,T} where {T <: Tuple} } ) where {N} = NamedTuple{N}
-getprototype(::NamedTuple{N,T} where {T<: Tuple} ) where N = NamedTuple{N}
-
-function loadvals(argstype, obstype)
-    args = getntkeys(argstype)
-    obs = getntkeys(obstype)
-    loader = @q begin
-    end
-
-    for k in args
-        push!(loader.args, :($k = _args.$k))
-    end
-    for k in obs
-        push!(loader.args, :($k = _obs.$k))
-    end
-
-    src -> (@q begin
-        $loader
-        $src
-    end) |> MacroTools.flatten
-end
 
 function loadvals(argstype, obstype, parstype)
     args = schema(argstype)
@@ -234,13 +212,6 @@ function loadvals(argstype, obstype, parstype)
         $src
     end) |> MacroTools.flatten
 end
-
-
-getntkeys(::NamedTuple{A,B}) where {A,B} = A
-getntkeys(::Type{NamedTuple{A,B}}) where {A,B} = A
-getntkeys(::Type{NamedTuple{A}}) where {A} = A
-getntkeys(::Type{LazyMerge{X,Y}}) where {X,Y} = Tuple(getntkeys(X) ∪ getntkeys(Y))
-
 
 # This is just handy for REPLing, no direct connection to Tilde
 
