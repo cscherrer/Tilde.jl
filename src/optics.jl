@@ -11,7 +11,7 @@ end
 
 (l::Lens!!)(o) = l.pure(o)
 
-@inline function Accessors.set(o, l::Lens!!{<: ComposedOptic}, val)
+@inline function Accessors.set(o, l::Lens!!{<:ComposedOptic}, val)
     set(o, Lens!!(l.pure.outer) ∘ Lens!!(l.pure.inner), val)
 end
 
@@ -26,10 +26,12 @@ end
 using Tricks
 
 @inline function Accessors.set(o::O, l::Lens!!{typeof(identity)}, val::V) where {O,V}
-    if ismutable(o) && static_hasmethod(iterate, Tuple{O}) && static_hasmethod(iterate, Tuple{V})
+    if ismutable(o) &&
+       static_hasmethod(iterate, Tuple{O}) &&
+       static_hasmethod(iterate, Tuple{V})
         o .= val
     else
-        val 
+        val
     end
 end
 
@@ -53,7 +55,7 @@ end
 using Accessors: setmacro, opticmacro, modifymacro
 
 macro set!!(ex)
-    setmacro(Lens!!, ex; overwrite=true)
+    setmacro(Lens!!, ex; overwrite = true)
 end
 
 macro optic!!(ex)
@@ -70,7 +72,7 @@ function unescape(ast)
     leaf(x) = x
     @inline function branch(f, head, args)
         default() = Expr(head, map(f, args)...)
-        
+
         head == :escape ? f(args[1]) : default()
     end
     foldast(leaf, branch)(ast)
@@ -87,7 +89,7 @@ function opticize(ast)
         # If we get here, we know we're working with something like `lhs ~ rhs`
         lhs = args[2]
         rhs = args[3]
-        
+
         lhs′ = @match lhs begin
             :(($(x::Symbol), $o)) => :(($x, $o))
             :(($(x::Var), $o)) => :(($x, $o))

@@ -24,4 +24,3 @@ function globals(ex::Expr)
 
     return foldall(leaf, branch)(solved_ex)
 end
-
