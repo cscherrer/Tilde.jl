@@ -7,7 +7,7 @@ EmptyNTtype = NamedTuple{(),Tuple{}} where {T<:Tuple}
 @inline function testvalue(
     mc::AbstractConditionalModel;
     cfg = NamedTuple(),
-    ctx = NamedTuple()
+    ctx = NamedTuple(),
 )
     gg_call(testvalue, mc, NamedTuple(), cfg, ctx, (r, ctx) -> r)
 end
@@ -18,7 +18,7 @@ end
     lens,
     d,
     cfg,
-    ctx::NamedTuple
+    ctx::NamedTuple,
 ) where {X}
     xnew = set(value(x), Lens!!(lens), testvalue(d))
     ctx′ = merge(ctx, NamedTuple{(X,)}((xnew,)))
@@ -31,7 +31,7 @@ end
     lens,
     d,
     cfg,
-    ctx::NamedTuple
+    ctx::NamedTuple,
 ) where {X}
     (value(x), ctx, nothing)
 end

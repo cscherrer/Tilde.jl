@@ -34,8 +34,10 @@ end
 
 ModelPosterior(m::AbstractModel) = ModelPosterior(m, NamedTuple(), NamedTuple())
 
-(post::ModelPosterior)(nt::NamedTuple) =
+function (post::ModelPosterior)(nt::NamedTuple)
     ModelPosterior(model(post)(merge(argvals(post), nt)), post.obs)
+end
 
-Base.:|(post::ModelPosterior, nt::NamedTuple) =
+function Base.:|(post::ModelPosterior, nt::NamedTuple)
     ModelPosterior(post.closure, merge(post.obs, nt))
+end

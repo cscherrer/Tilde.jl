@@ -68,7 +68,7 @@ include("callify.jl")
 
 @generated function MeasureTheory.For(
     f::GG.Closure{F,Free},
-    inds::I
+    inds::I,
 ) where {F,Free,I<:Tuple}
     freetypes = Free.types
     eltypes = eltype.(I.types)

@@ -42,9 +42,15 @@ function make_body(M, f, ast::Expr, retfun, argsT, obsT, parsT)
                 # inpars = inkeys(sx, parsT)
                 rhs = unsolve(rhs)
 
-                obj =
-                    inobs ? :($Observed{$qx}($x)) :
-                    (x ∈ knownvars ? :($Unobserved{$qx}($x)) : :($Unobserved{$qx}(missing)))
+                obj = if inobs
+                    :($Observed{$qx}($x))
+                else
+                    (if x ∈ knownvars
+                        :($Unobserved{$qx}($x))
+                    else
+                        :($Unobserved{$qx}(missing))
+                    end)
+                end
                 st = :(($x, _ctx, _retn) = $tilde($f, $obj, $l, $rhs, _cfg, _ctx))
                 # qst = QuoteNode(st)
                 q = quote
@@ -90,7 +96,7 @@ end
     _pars::NamedTuple{N,T},
     _cfg,
     _ctx,
-    ::R
+    ::R,
 ) where {F,MC,N,T,R}
     _m = type2model(MC)
     M = getmodule(_m)

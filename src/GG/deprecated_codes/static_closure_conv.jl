@@ -12,7 +12,7 @@ function mk_closure_static(expr, toplevel::Vector{Expr})
                             hd && if hd in (:->, :function)
                             end,
                             Expr(:tuple, args...),
-                            body
+                            body,
                         ) ||
                         # a -> body
                         Expr(hd && if hd in (:->, :function)

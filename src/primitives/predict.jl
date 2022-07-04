@@ -38,7 +38,7 @@ end
     x::Observed,
     d,
     pars::NamedTuple{N},
-    ctx
+    ctx,
 ) where {X,N}
     if X ∈ N
         quote
@@ -65,7 +65,7 @@ end
     x::Unobserved,
     d,
     pars::NamedTuple{N},
-    ctx
+    ctx,
 ) where {X,N}
     if X ∈ N
         quote

@@ -47,7 +47,7 @@ end
 function readlrdata()
     fname = joinpath("lr.data")
     z = readdlm(fname)
-    A = z[:, 1:(end - 1)]
+    A = z[:, 1:(end-1)]
     A = [ones(size(A, 1)) A]
     y = z[:, end] .- 1
     return A, y
@@ -109,7 +109,7 @@ x0 = zeros(d); # starting point sampler
     -0.1357,
     -0.6446,
     -0.06583,
-    -0.04994
+    -0.04994,
 ]
 n = 2000
 c = 4.0 # initial guess for the bound
@@ -130,7 +130,7 @@ Z = BouncyParticle(
     2.0, # momentum refreshment rate and sample saving rate 
     0.95, # momentum correlation / only gradually change momentum in refreshment/momentum update
     M, # metric (PDMat compatible object for momentum covariance)
-    missing # legacy
+    missing, # legacy
 );
 
 sampler = ZZB.NotFactSampler(
@@ -142,8 +142,8 @@ sampler = ZZB.NotFactSampler(
     (),
     (;
         adapt = true, # adapt bound c
-        subsample = true # keep only samples at refreshment times
-    )
+        subsample = true, # keep only samples at refreshment times
+    ),
 );
 
 # @time first(Iterators.drop(tvs,1000))
@@ -195,20 +195,20 @@ Tilde.sample(
     post,
     dynamichmc(;
         init = (; q = init_params, κ = GaussianKineticEnergy(inv_metric)),
-        warmup_stages = default_warmup_stages(; middle_steps = 0, doubling_stages = 0)
+        warmup_stages = default_warmup_stages(; middle_steps = 0, doubling_stages = 0),
     ),
     1,
-    1
+    1,
 );
 hmc_time = @elapsed @time (
     hmc_samples = Tilde.sample(
         post,
         dynamichmc(;
             init = (; q = init_params, κ = GaussianKineticEnergy(inv_metric)),
-            warmup_stages = default_warmup_stages(; middle_steps = 0, doubling_stages = 0)
+            warmup_stages = default_warmup_stages(; middle_steps = 0, doubling_stages = 0),
         ),
         2000,
-        1
+        1,
     )
 );
 hmc_chain = MCMCChains.Chains(hmc_samples.θ);

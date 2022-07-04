@@ -10,7 +10,7 @@ end
     lens,
     d,
     cfg,
-    ctx::NamedTuple
+    ctx::NamedTuple,
 ) where {X}
     xparent = getproperty(cfg.obs, X)
     x = lens(xparent)

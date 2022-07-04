@@ -44,5 +44,6 @@ import Base
 
 Base.:|(m::AbstractModel, nt::NamedTuple) = ModelClosure(m) | nt
 
-Base.:|(cm::ModelClosure, nt::NamedTuple) =
+function Base.:|(cm::ModelClosure, nt::NamedTuple)
     ModelClosure(cm.model, cm.argvals, merge(cm.obs, nt))
+end

@@ -9,13 +9,13 @@ struct Transform{N,T} <: Bijector{N}
 end
 
 function (b::Transform{N,T})(
-    x::NamedTuple
+    x::NamedTuple,
 ) where {N,T<:TransformVariables.AbstractTransform}
     inverse(b.t, x)
 end
 
 function (b::Inverse{<:Transform{N,T}})(
-    y::AbstractVector
+    y::AbstractVector,
 ) where {N,T<:TransformVariables.AbstractTransform}
     b.orig.t(y)
 end

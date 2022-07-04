@@ -13,7 +13,7 @@ pages_after_examples = [
     "TildeMLJ.jl" => "Tildemlj.md",
     "Internals" => "internals.md",
     "Miscellaneous" => "misc.md",
-    "To-Do List" => "to-do-list.md"
+    "To-Do List" => "to-do-list.md",
 ]
 pages = vcat(pages_before_examples, pages_examples, pages_after_examples)
 
@@ -36,7 +36,7 @@ makedocs(;
     repo = "https://github.com/cscherrer/Tilde.jl/blob/{commit}{path}#L{line}",
     sitename = "Tilde.jl",
     authors = "Chad Scherrer",
-    strict = true
+    strict = true,
 )
 
 deploydocs(; repo = "github.com/cscherrer/Tilde.jl", push_preview = true)

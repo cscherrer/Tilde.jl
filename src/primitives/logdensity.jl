@@ -24,7 +24,7 @@ end
     lens,
     d,
     cfg,
-    ctx::NamedTuple
+    ctx::NamedTuple,
 ) where {X}
     x = value(x)
     insupport(d, lens(x)) || return (x, ctx, ReturnNow(-Inf))
@@ -37,7 +37,7 @@ end
     pars::NamedTuple;
     cfg = NamedTuple(),
     ctx = NamedTuple(),
-    retfun = (r, ctx) -> ctx.ℓ
+    retfun = (r, ctx) -> ctx.ℓ,
 )
     # cfg = merge(cfg, (pars=pars,))
     ctx = merge(ctx, (ℓ = 0.0,))
@@ -51,7 +51,7 @@ end
     x,
     d,
     cfg,
-    ctx::NamedTuple
+    ctx::NamedTuple,
 )
     x = value(x)
     @reset ctx.ℓ += MeasureBase.unsafe_logdensityof(d, lens(x))

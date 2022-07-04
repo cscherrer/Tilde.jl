@@ -18,7 +18,7 @@ end
     lens::typeof(identity),
     d,
     cfg,
-    ctx::NamedTuple
+    ctx::NamedTuple,
 ) where {X}
     xnew = testparams(d)
     ctx′ = merge(ctx, NamedTuple{(X,)}((xnew,)))
@@ -31,7 +31,7 @@ end
     lens,
     d,
     cfg,
-    ctx::NamedTuple
+    ctx::NamedTuple,
 ) where {X}
     xnew = set(x, Lens!!(lens), testparams(d))
     ctx′ = merge(ctx, NamedTuple{(X,)}((xnew,)))

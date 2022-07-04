@@ -33,15 +33,16 @@ function MarkovContext(ctx::MarkovContext, m::Set{Tuple{Symbol,T}}) where {T}
     MarkovContext(ctx.value, newset)
 end
 
-Base.show(io::IO, mc::MarkovContext) =
+function Base.show(io::IO, mc::MarkovContext)
     print(io, "MarkovContext(", mc.value, ", ", mc.meta, ")")
+end
 
 function markovinate(nt::NamedTuple{N,T}) where {N,T}
     vals = tuple(
         (
             MarkovContext(v, Set{Tuple{Symbol,Any}}([(k, identity)])) for
             (k, v) in pairs(nt)
-        )...
+        )...,
     )
     NamedTuple{N}(vals)
 end

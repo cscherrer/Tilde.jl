@@ -12,7 +12,7 @@ function sample(
     m::AbstractConditionalModel,
     config::DynamicHMCConfig,
     nsamples::Int = 1000,
-    nchains::Int = 4
+    nchains::Int = 4,
 )
     ℓ(x) = unsafe_logdensityof(m, x)
     tr = as(m)
@@ -26,7 +26,7 @@ function sample(
     m::AbstractConditionalModel,
     config::DynamicHMCConfig,
     nsamples::Int = 1000,
-    nchains::Int = 4
+    nchains::Int = 4,
 )
     sample(Random.GLOBAL_RNG, m, config, nsamples, nchains)
 end

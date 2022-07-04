@@ -38,7 +38,7 @@ function bayeslm(
     pr;
     N::Int = 1000,
     ad_backend = Val(:ForwardDiff),
-    kwargs...
+    kwargs...,
 )
     ℓ = makeℓ(X, y, pr)
     t = as(pr(k = size(X, 2)))

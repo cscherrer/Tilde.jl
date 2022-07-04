@@ -25,7 +25,7 @@ end
     m::ModelClosure,
     d::Integer,
     dims::Integer...;
-    kwargs...
+    kwargs...,
 )
     rand(rng, Float64, m, d, dims...; kwargs...)
 end
@@ -35,7 +35,7 @@ end
     m::ModelClosure,
     d::Integer,
     dims::Integer...;
-    kwargs...
+    kwargs...,
 ) where {T_rng}
     rand(GLOBAL_RNG, T_rng, m, d, dims...; kwargs...)
 end
@@ -45,7 +45,7 @@ end
     ::Type{T_rng},
     d::ModelClosure,
     N::Integer,
-    v::Vararg{Integer}
+    v::Vararg{Integer},
 ) where {T_rng}
     @assert isempty(v)
     r = chainvec(rand(rng, T_rng, d), N)
@@ -68,7 +68,7 @@ end
     ::Type{T_rng},
     m::ModelClosure;
     ctx = NamedTuple(),
-    retfun = (r, ctx) -> r
+    retfun = (r, ctx) -> r,
 ) where {T_rng}
     cfg = (rng = rng, T_rng = T_rng)
     gg_call(rand, m, NamedTuple(), cfg, ctx, retfun)
@@ -82,7 +82,7 @@ end
     lens,
     d,
     cfg,
-    ctx::NamedTuple
+    ctx::NamedTuple,
 ) where {X}
     xnew = set(value(x), Lens!!(lens), rand(cfg.rng, d))
     ctx′ = merge(ctx, NamedTuple{(X,)}((xnew,)))
@@ -95,7 +95,7 @@ end
     lens,
     d,
     cfg,
-    ctx::NamedTuple
+    ctx::NamedTuple,
 ) where {X}
     (value(x), ctx, nothing)
 end

@@ -21,7 +21,7 @@ function bouncy(
     c = 10.0,
     λref = 0.1,
     ρ = 0.0,
-    adapt = false
+    adapt = false,
 ) where {A,B}
     ℓ(pars) = logdensity_def(m, pars)
 
@@ -55,7 +55,7 @@ function bouncy(
         T,
         c,
         BouncyParticle(sparse(I(d)), 0 * x0, λref, ρ);
-        adapt = adapt
+        adapt = adapt,
     )
 end
 

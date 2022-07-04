@@ -9,7 +9,7 @@ end
 @inline function weightedrand(
     rng::AbstractRNG,
     m::AbstractConditionalModel;
-    ctx = NamedTuple()
+    ctx = NamedTuple(),
 )
     cfg = (rng = rng,)
     ctx = (ℓ = 0.0, pars = NamedTuple())
@@ -22,7 +22,7 @@ end
     lens,
     d,
     cfg,
-    ctx::NamedTuple
+    ctx::NamedTuple,
 ) where {X}
     x = value(x)
     Δℓ = logdensityof(d, lens(x))
@@ -36,7 +36,7 @@ end
     lens,
     d,
     cfg,
-    ctx::NamedTuple
+    ctx::NamedTuple,
 ) where {X}
     xnew = set(value(x), Lens!!(lens), rand(cfg.rng, d))
     pars = merge(ctx.pars, NamedTuple{(X,)}((xnew,)))
