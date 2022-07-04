@@ -10,7 +10,6 @@ export RuntimeFn, closure_conv, mk_function, mkngg, mk_expr
 export to_type, from_type, runtime_eval
 include("closure_conv.jl")
 
-
 function mk_function(ex)
     mk_function(@__MODULE__, ex)
 end
@@ -35,7 +34,6 @@ function mk_expr(mod::Module, ex)
     ex = solve!(ex)
     closure_conv(mod, ex)
 end
-
 
 function mk_function(mod::Module, args, kwargs, body)
     mk_function(mod, Expr(:function, :($(args...), ; $(kwargs...)), body))

@@ -208,12 +208,10 @@ function decompress(encoded::Tuple)
     decompress_impl(encoded, meta)
 end
 
-
 function decompress(encoded)
     default_meta = ((), ())
     decompress_impl(encoded, default_meta)
 end
-
 
 struct Constructor{A} end
 function (::Constructor{A})(args...) where {A}

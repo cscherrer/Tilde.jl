@@ -5,7 +5,6 @@ end
 
 model(post::ModelPosterior) = model(post.closure)
 
-
 function Base.show(io::IO, cm::ModelPosterior)
     println(io, "ModelPosterior given")
     println(io, "    arguments    ", keys(argvals(cm)))
@@ -13,9 +12,8 @@ function Base.show(io::IO, cm::ModelPosterior)
     println(io, model(cm))
 end
 
-type2model(::Type{MP}) where {M, MP<:ModelPosterior{M}} = type2model(M)
+type2model(::Type{MP}) where {M,MP<:ModelPosterior{M}} = type2model(M)
 type2model(::ModelPosterior{M}) where {M} = type2model(M)
-
 
 export argvals
 argvals(c::ModelPosterior) = argvals(c.closure)
@@ -34,9 +32,12 @@ function observed(cm::ModelPosterior{M,A,O}) where {M,A,O}
     keys(schema(O))
 end
 
+ModelPosterior(m::AbstractModel) = ModelPosterior(m, NamedTuple(), NamedTuple())
 
-ModelPosterior(m::AbstractModel) = ModelPosterior(m,NamedTuple(), NamedTuple())
+function (post::ModelPosterior)(nt::NamedTuple)
+    ModelPosterior(model(post)(merge(argvals(post), nt)), post.obs)
+end
 
-(post::ModelPosterior)(nt::NamedTuple) = ModelPosterior(model(post)(merge(argvals(post), nt)), post.obs)
-
-Base.:|(post::ModelPosterior, nt::NamedTuple) = ModelPosterior(post.closure, merge(post.obs, nt))
+function Base.:|(post::ModelPosterior, nt::NamedTuple)
+    ModelPosterior(post.closure, merge(post.obs, nt))
+end

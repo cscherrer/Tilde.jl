@@ -52,15 +52,8 @@ export measures
     sim(x) = x
 
     ctx = rmap(sim, pars)
-    
-    nt = gg_call(
-        measures,
-        m,
-        pars,
-        NamedTuple(),
-        ctx,
-        (r, ctx) -> ctx,
-    )
+
+    nt = gg_call(measures, m, pars, NamedTuple(), ctx, (r, ctx) -> ctx)
 
     f(x::AbstractArray) = productmeasure(narrow_array(x))
     f(x) = x
@@ -68,7 +61,15 @@ export measures
     rmap(f, nt)
 end
 
-@inline function tilde(::typeof(measures), ::typeof(identity), xname, ::Unobserved, d, cfg, ctx)
+@inline function tilde(
+    ::typeof(measures),
+    ::typeof(identity),
+    xname,
+    ::Unobserved,
+    d,
+    cfg,
+    ctx,
+)
     x = testvalue(d)
     xname = dynamic(xname)
     ctx = merge(ctx, NamedTuple{(xname,)}((d,)))
@@ -77,7 +78,7 @@ end
 
 @inline function tilde(::typeof(measures), lens, xname, x::Unobserved, d, cfg, ctx)
     xname = dynamic(xname)
-    ctx = set(ctx, PropertyLens{xname}()⨟ Lens!!(lens), d)
+    ctx = set(ctx, PropertyLens{xname}() ⨟ Lens!!(lens), d)
 
     xnew = getproperty(cfg.pars, xname)
     (xnew, ctx, ctx)
@@ -87,7 +88,6 @@ end
     x = x.value
     (x, ctx, ctx)
 end
-
 
 function as(mdl::AbstractConditionalModel)
     ms = measures(mdl)

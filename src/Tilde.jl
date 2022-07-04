@@ -13,7 +13,6 @@ import DensityInterface: densityof
 import DensityInterface: DensityKind
 using DensityInterface
 
-
 using NamedTupleTools
 using SampleChains
 # using SymbolicCodegen
@@ -43,17 +42,14 @@ using TupleVectors: unwrap
 # using SimplePosets: SimplePoset
 # import SimplePosets
 
-
 using RuntimeGeneratedFunctions
 RuntimeGeneratedFunctions.init(@__MODULE__)
 using MeasureBase: AbstractTransitionKernel
-
 
 using NestedTuples: TypelevelExpr
 
 using MeasureTheory: ∞
 import MeasureTheory: as
-
 
 include("GG/src/GeneralizedGenerated.jl")
 using .GeneralizedGenerated
@@ -70,10 +66,13 @@ export model, Model, tilde, @model
 using MLStyle
 include("callify.jl")
 
-@generated function MeasureTheory.For(f::GG.Closure{F,Free}, inds::I) where {F,Free,I<:Tuple}
+@generated function MeasureTheory.For(
+    f::GG.Closure{F,Free},
+    inds::I,
+) where {F,Free,I<:Tuple}
     freetypes = Free.types
     eltypes = eltype.(I.types)
-    T = Core.Compiler.return_type(F, Tuple{freetypes..., eltypes...})
+    T = Core.Compiler.return_type(F, Tuple{freetypes...,eltypes...})
     quote
         $(Expr(:meta, :inline))
         For{$T,GG.Closure{F,Free},I}(f, inds)

@@ -15,8 +15,14 @@ Draw  samples until time `T` from the posterior distribution of parameters defin
 Samples are drawn using the Bouncy particle sampler.
 Returns a `Trace` object. 
 """
-function bouncy(m::ModelClosure, T = 1000.0;  c=10.0, λref=0.1, ρ=0.0, adapt=false) where {A,B}
-
+function bouncy(
+    m::ModelClosure,
+    T = 1000.0;
+    c = 10.0,
+    λref = 0.1,
+    ρ = 0.0,
+    adapt = false,
+) where {A,B}
     ℓ(pars) = logdensity_def(m, pars)
 
     t = as(m)
@@ -25,7 +31,6 @@ function bouncy(m::ModelClosure, T = 1000.0;  c=10.0, λref=0.1, ρ=0.0, adapt=f
         (θ, logjac) = transform_and_logjac(t, x)
         -ℓ(θ) - logjac
     end
-
 
     function ∇ϕ!(y, x)
         gradient!(y, f, x)
@@ -41,9 +46,17 @@ function bouncy(m::ModelClosure, T = 1000.0;  c=10.0, λref=0.1, ρ=0.0, adapt=f
 
     t0 = 0.0
     θ0 = randn(d)
-    
-    pdmp(∇ϕ!, t0, x0, θ0, T, c, BouncyParticle(sparse(I(d)), 0*x0, λref, ρ); adapt=adapt)
 
+    pdmp(
+        ∇ϕ!,
+        t0,
+        x0,
+        θ0,
+        T,
+        c,
+        BouncyParticle(sparse(I(d)), 0 * x0, λref, ρ);
+        adapt = adapt,
+    )
 end
 
 m = @model x begin
@@ -58,13 +71,13 @@ end
 x = randn(3);
 truth = [0.61, -0.34, -1.74];
 
-post = m(x=x) | (y=truth,)
+post = m(x = x) | (y = truth,)
 
-trace, final, (num, acc) = @time bouncy(post, c=10)
+trace, final, (num, acc) = @time bouncy(post, c = 10)
 
-ts, xs = ZigZagBoomerang.sep(discretize(trace, 0.1)) 
+ts, xs = ZigZagBoomerang.sep(discretize(trace, 0.1))
 
 p = lines(ts, getindex.(xs, 1))
-lines!(ts, getindex.(xs, 2), color=:red)
+lines!(ts, getindex.(xs, 2), color = :red)
 
 p
