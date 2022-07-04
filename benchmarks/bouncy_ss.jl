@@ -19,8 +19,9 @@ struct LazyRand{T,R}
     rng::R
 end
 
-Base.iterate(iter::LazyRand) =
+function Base.iterate(iter::LazyRand)
     iter.n > 0 ? (rand(iter.rng, iter.sampler), iter.n - 1) : nothing
+end
 Base.iterate(iter::LazyRand, n) = n > 0 ? (rand(iter.rng, iter.sampler), n - 1) : nothing
 lazyrand(rng, r::UnitRange, n) = LazyRand(Random.SamplerRangeNDL(r), n, rng)
 lazyrand(r::UnitRange, n) = LazyRand(Random.SamplerRangeNDL(r), n, Random.GLOBAL_RNG)
@@ -122,7 +123,7 @@ Z = BouncyParticle(
     1.0, # momentum refreshment rate and sample saving rate 
     0.9, # momentum correlation / only gradually change momentum in refreshment/momentum update
     M, # metric (PDMat compatible object for momentum covariance)
-    missing # legacy
+    missing, # legacy
 );
 
 sampler = ZZB.NotFactSampler(
@@ -134,8 +135,8 @@ sampler = ZZB.NotFactSampler(
     (),
     (;
         adapt = true, # adapt bound c
-        subsample = true # keep only samples at refreshment times
-    )
+        subsample = true, # keep only samples at refreshment times
+    ),
 );
 
 using TupleVectors: chainvec

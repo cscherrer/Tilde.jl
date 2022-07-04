@@ -1,7 +1,10 @@
 struct RuntimeFn{Args,Kwargs,Body,Name} end
 struct Unset end
 
-Base.show(io::IO, rtfn::RuntimeFn{Args,Kwargs,Body,Name}) where {Args,Kwargs,Body,Name} =
+function Base.show(
+    io::IO,
+    rtfn::RuntimeFn{Args,Kwargs,Body,Name},
+) where {Args,Kwargs,Body,Name}
     begin
         args = from_type(Args)
         kwargs = from_type(Kwargs)
@@ -11,9 +14,14 @@ Base.show(io::IO, rtfn::RuntimeFn{Args,Kwargs,Body,Name}) where {Args,Kwargs,Bod
         repr = "$Name = ($args;$kwargs) -> $body"
         print(io, repr)
     end
+end
 
-Base.show(io::IO, ::Type{RuntimeFn{Args,Kwargs,Body,Name}}) where {Args,Kwargs,Body,Name} =
+function Base.show(
+    io::IO,
+    ::Type{RuntimeFn{Args,Kwargs,Body,Name}},
+) where {Args,Kwargs,Body,Name}
     print(io, "ggfunc-$Name")
+end
 
 struct Argument
     name::Symbol
@@ -77,8 +85,11 @@ const _zero_arg = compress(list(Argument))
     end
 end
 
-_get_kwds(::Type{Base.Iterators.Pairs{A,B,C,NamedTuple{Kwds,D}}}) where {Kwds,A,B,C,D} =
+function _get_kwds(
+    ::Type{Base.Iterators.Pairs{A,B,C,NamedTuple{Kwds,D}}},
+) where {Kwds,A,B,C,D}
     Kwds
+end
 
 @generated function (::RuntimeFn{Args,Kwargs,Body})(
     pargs...;

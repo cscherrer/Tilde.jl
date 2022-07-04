@@ -11,7 +11,7 @@ using Accessors
     pars::NamedTuple;
     cfg = NamedTuple(),
     ctx = NamedTuple(),
-    retfun = (r, ctx) -> ctx.ℓ
+    retfun = (r, ctx) -> ctx.ℓ,
 )
     # cfg = merge(cfg, (pars=pars,))
     ctx = merge(ctx, (ℓ = 0.0,))

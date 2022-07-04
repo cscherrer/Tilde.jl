@@ -25,14 +25,19 @@ function mk_closure_static(expr, toplevel::Vector{Expr})
                                 fn_expr = Expr(
                                     :function,
                                     :($glob_name($(args...); $(kwargs...))),
-                                    body
+                                    body,
                                 )
                                 (fn_expr, :glob_name)
                             else
                                 fn_expr = Expr(
                                     :function,
                                     :($glob_name($closure_arg, $(args...); $(kwargs...))),
-                                    body
+                                    body,
+                                )
+                                ret = :(
+                                    let frees = $closure_arg
+                                        $Closure{$glob_name,typeof(frees)}(frees)
+                                    end
                                 )
                                 ret = :(
                                     let frees = $closure_arg
