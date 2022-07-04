@@ -13,7 +13,6 @@ import DensityInterface: densityof
 import DensityInterface: DensityKind
 using DensityInterface
 
-
 using NamedTupleTools
 using SampleChains
 # using SymbolicCodegen
@@ -43,17 +42,14 @@ using TupleVectors: unwrap
 # using SimplePosets: SimplePoset
 # import SimplePosets
 
-
 using RuntimeGeneratedFunctions
 RuntimeGeneratedFunctions.init(@__MODULE__)
 using MeasureBase: AbstractTransitionKernel
-
 
 using NestedTuples: TypelevelExpr
 
 using MeasureTheory: ∞
 import MeasureTheory: as
-
 
 include("GG/src/GeneralizedGenerated.jl")
 using .GeneralizedGenerated
@@ -70,10 +66,13 @@ export model, Model, tilde, @model
 using MLStyle
 include("callify.jl")
 
-@generated function MeasureTheory.For(f::GG.Closure{F,Free}, inds::I) where {F,Free,I<:Tuple}
+@generated function MeasureTheory.For(
+    f::GG.Closure{F,Free},
+    inds::I
+) where {F,Free,I<:Tuple}
     freetypes = Free.types
     eltypes = eltype.(I.types)
-    T = Core.Compiler.return_type(F, Tuple{freetypes..., eltypes...})
+    T = Core.Compiler.return_type(F, Tuple{freetypes...,eltypes...})
     quote
         $(Expr(:meta, :inline))
         For{$T,GG.Closure{F,Free},I}(f, inds)
@@ -87,8 +86,8 @@ include("core/models/model.jl")
 include("core/dependencies.jl")
 include("core/utils.jl")
 include("core/models/closure.jl")
+include("maybeobserved.jl")
 include("core/models/posterior.jl")
-include("primitives/interpret.jl")
 include("distributions/iid.jl")
 
 include("primitives/rand.jl")
@@ -96,13 +95,14 @@ include("primitives/logdensity.jl")
 include("primitives/logdensity_rel.jl")
 include("primitives/insupport.jl")
 
-# include("primitives/basemeasure.jl")
 include("primitives/testvalue.jl")
 include("primitives/testparams.jl")
 include("primitives/weightedsampling.jl")
 include("primitives/measures.jl")
 include("primitives/basemeasure.jl")
 include("primitives/predict.jl")
+include("primitives/dag.jl")
+include("primitives/interpret.jl")
 
 include("transforms/utils.jl")
 

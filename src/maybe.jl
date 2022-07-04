@@ -3,10 +3,10 @@ struct Just{T}
     value::T
 end
 
-Maybe{T} = Union{None, Just{T}} where {T}
+Maybe{T} = Union{None,Just{T}} where {T}
 
 maybe(f, m::None, default) = default
-maybe(f, m::Just, default) = f(m.value) 
+maybe(f, m::Just, default) = f(m.value)
 
 maybe(f, ::Missing, default) = default
 maybe(f, x, default) = f(x)
@@ -23,7 +23,6 @@ fromMaybe(::None, default) = default
 function qisdefined(x::Symbol)
     :($(Expr(:isdefined, x)))
 end
-
 
 function qmaybe(x::Symbol)
     isdef = Expr(:isdefined, x)

@@ -25,7 +25,7 @@ function closure_conv(top::Any, ex::Any)
             end
             push!(block, conv(inner))
             Expr(:block, block...)
-        @when Expr(:function, head, inner && Expr(:scoped, scope, _)) = ex
+            @when Expr(:function, head, inner && Expr(:scoped, scope, _)) = ex
 
             freenames = Symbol[f.name for f in scope.freevars]
             # If the evaluation module is a symbol and not in arguments
@@ -63,11 +63,11 @@ function closure_conv(top::Any, ex::Any)
                 fn = Expr(:block, :($(fh.name) = $fn))
             end
             fn
-        @when Expr(:let, var::Var, body) = ex
+            @when Expr(:let, var::Var, body) = ex
             Expr(:let, var.name, conv(body))
             # Soss#331: even if a uninitialized let-bound variable is free, 
             # we don't convert it to `$var.contents`
-        @when Expr(hd, args...) = ex
+            @when Expr(hd, args...) = ex
             Expr(hd, map(conv, args)...)
         end
     end

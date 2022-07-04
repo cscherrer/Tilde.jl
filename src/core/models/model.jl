@@ -1,6 +1,6 @@
 struct Model{A,B,M<:GG.TypeLevel} <: AbstractModel{A,B,M}
-    args :: Vector{Symbol}
-    body :: Expr
+    args::Vector{Symbol}
+    body::Expr
 end
 
 function Model(theModule::Module, args::Vector{Symbol}, body::Expr)
@@ -15,7 +15,7 @@ model(m::Model) = m
 function Base.convert(::Type{Expr}, m::Model)
     numArgs = length(m.args)
     args = if numArgs == 1
-       m.args[1]
+        m.args[1]
     elseif numArgs > 1
         Expr(:tuple, [x for x in m.args]...)
     end
@@ -32,10 +32,10 @@ function Base.convert(::Type{Expr}, m::Model)
         end
     end
 
-    striplines(q).args[1] 
+    striplines(q).args[1]
 end
 
-Base.show(io::IO, m :: Model) = println(io, convert(Expr, m))
+Base.show(io::IO, m::Model) = println(io, convert(Expr, m))
 
 function type2model(::Type{Model{A,B,M}}) where {A,B,M}
     args = Symbol[fieldnames(A)...]
@@ -43,22 +43,22 @@ function type2model(::Type{Model{A,B,M}}) where {A,B,M}
     Model{A,B,M}(args, body)
 end
 
-toargs(vs :: Vector{Symbol}) = Tuple(vs)
-toargs(vs :: NTuple{N,Symbol} where {N}) = vs
+toargs(vs::Vector{Symbol}) = Tuple(vs)
+toargs(vs::NTuple{N,Symbol} where {N}) = vs
 
-macro model(vs::Expr,expr::Expr)
+macro model(vs::Expr, expr::Expr)
     theModule = __module__
     @assert vs.head == :tuple
     @assert expr.head == :block
-    Model(theModule,Vector{Symbol}(vs.args), expr)
+    Model(theModule, Vector{Symbol}(vs.args), expr)
 end
 
 macro model(v::Symbol, expr::Expr)
     theModule = __module__
-    Model(theModule,[v], expr)
+    Model(theModule, [v], expr)
 end
 
-macro model(expr :: Expr)
+macro model(expr::Expr)
     theModule = __module__
-    Model(theModule,Vector{Symbol}(), expr)
+    Model(theModule, Vector{Symbol}(), expr)
 end

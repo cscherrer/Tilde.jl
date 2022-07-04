@@ -1,4 +1,4 @@
-struct ModelClosure{M,A} <: AbstractConditionalModel{M,A,NamedTuple{(), Tuple{}}}
+struct ModelClosure{M,A} <: AbstractConditionalModel{M,A,NamedTuple{(),Tuple{}}}
     model::M
     argvals::A
 end
@@ -23,7 +23,7 @@ end
 
 model(c::ModelClosure) = c.model
 
-ModelClosure(m::AbstractModel) = ModelClosure(m,NamedTuple())
+ModelClosure(m::AbstractModel) = ModelClosure(m, NamedTuple())
 
 (m::AbstractModel)(nt::NamedTuple) = ModelClosure(m, nt)
 
@@ -32,8 +32,8 @@ ModelClosure(m::AbstractModel) = ModelClosure(m,NamedTuple())
 argvalstype(mc::ModelClosure{M,A}) where {M,A} = A
 argvalstype(::Type{MC}) where {M,A,MC<:ModelClosure{M,A}} = A
 
-obstype(::ModelClosure) = NamedTuple{(), Tuple{}}
-obstype(::Type{<:ModelClosure}) = NamedTuple{(), Tuple{}}
+obstype(::ModelClosure) = NamedTuple{(),Tuple{}}
+obstype(::Type{<:ModelClosure}) = NamedTuple{(),Tuple{}}
 
 type2model(::Type{MC}) where {M,MC<:ModelClosure{M}} = type2model(M)
 

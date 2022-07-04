@@ -3,17 +3,17 @@ using TupleVectors
 export predict
 
 @inline function predict(m::AbstractConditionalModel, pars)
-    f(d,x) = rand(GLOBAL_RNG, d)
+    f(d, x) = rand(GLOBAL_RNG, d)
     return predict(f, m, pars)
 end
 
 @inline function predict(rng::AbstractRNG, m::AbstractConditionalModel, pars)
-    f(d,x) = rand(rng, d)
+    f(d, x) = rand(rng, d)
     return predict(f, m, pars)
 end
 
 @inline function predict(f, m::AbstractConditionalModel, pars::NamedTuple)
-    cfg = (f=f, pars=pars)
+    cfg = (f = f, pars = pars)
     ctx = NamedTuple()
     gg_call(predict, m, pars, cfg, ctx, (r, ctx) -> r)
 end
@@ -31,7 +31,15 @@ end
     tilde_predict(cfg.f, lens, xname, x, d, cfg.pars, ctx)
 end
 
-@generated function tilde_predict(f, lens, ::StaticSymbol{X}, x::Observed, d, pars::NamedTuple{N}, ctx) where {X,N}
+@generated function tilde_predict(
+    f,
+    lens,
+    ::StaticSymbol{X},
+    x::Observed,
+    d,
+    pars::NamedTuple{N},
+    ctx
+) where {X,N}
     if X ∈ N
         quote
             # @info "$X ∈ N"
@@ -50,7 +58,15 @@ end
     end
 end
 
-@generated function tilde_predict(f, lens, ::StaticSymbol{X}, x::Unobserved, d, pars::NamedTuple{N}, ctx) where {X,N}
+@generated function tilde_predict(
+    f,
+    lens,
+    ::StaticSymbol{X},
+    x::Unobserved,
+    d,
+    pars::NamedTuple{N},
+    ctx
+) where {X,N}
     if X ∈ N
         quote
             # @info "$X ∈ N"
