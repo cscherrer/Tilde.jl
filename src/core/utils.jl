@@ -181,16 +181,16 @@ function loadvals(argstype, obstype, parstype)
     end
     for k in setdiff(keys(args), keys(pars) ∪ keys(data))
         T = getproperty(args, k)
-        push!(loader.args, :($k::$T = _args.$k))
+        push!(loader.args, :($k = _args.$k))
     end
     for k in setdiff(keys(data), keys(pars))
         T = getproperty(data, k)
-        push!(loader.args, :($k::$T = _obs.$k))
+        push!(loader.args, :($k = _obs.$k))
     end
 
     for k in setdiff(keys(pars), keys(data))
         T = getproperty(pars, k)
-        push!(loader.args, :($k::$T = _pars.$k))
+        push!(loader.args, :($k = _pars.$k))
     end
 
     for k in keys(pars) ∩ keys(data)

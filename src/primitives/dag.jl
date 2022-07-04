@@ -15,7 +15,7 @@ context_meta(ctx::AbstractContext) = ctx.meta
 
 
 
-export dag
+export getdag
 
 
 
@@ -25,46 +25,70 @@ using Graphs
 using MetaGraphsNext
 
 
-
-struct MarkovContext{T,M} <: AbstractContext
+struct MarkovContext{T} <: AbstractContext
     value::T
-    meta::M
+    meta::Set{Tuple{Symbol, Any}}
 end
 
+function MarkovContext(ctx::MarkovContext, m::Set{Tuple{Symbol, Any}})
+    newset = union(ctx.meta, m)
+    MarkovContext(ctx.value, newset)
+end
+
+
+function MarkovContext(ctx::MarkovContext, m::Set{Tuple{Symbol, T}}) where {T}
+    newset = union(ctx.meta, Set{Tuple{Symbol, Any}}([m]))
+    MarkovContext(ctx.value, newset)
+end
+
+
+Base.show(io::IO, mc::MarkovContext) = print(io, "MarkovContext(", mc.value, ", ", mc.meta, ")")
+
 function markovinate(nt::NamedTuple{N,T}) where {N,T}
-    vals = tuple((MarkovContext(v, Set((k,identity))) for (k,v) in pairs(nt))...)
+    vals = tuple((MarkovContext(v, Set{Tuple{Symbol, Any}}([(k,identity)])) for (k,v) in pairs(nt))...)
     NamedTuple{N}(vals)
 end
 
 MarkovContext(x::MarkovContext) = x
-MarkovContext(x) = MarkovContext(x, Set())
+MarkovContext(x) = MarkovContext(x, Set{Tuple{Symbol, Any}}())
 
-markov_parents(x) = Set()
+markov_value(x) = x
+markov_parents(x) = Set{Tuple{Symbol, Any}}()
 
 markov_value(x::MarkovContext) = x.value
 markov_parents(x::MarkovContext) = x.meta
 
-function dag(m::AbstractConditionalModel, pars)
+
+
+function getdag(m::AbstractConditionalModel, pars)
     cfg = NamedTuple()
     pars = markovinate(pars)
-    dag = MetaGraph(DiGraph(), Label = Tuple{Symbol, Any})
-    ctx =  (dag = dag,)
-    gg_call(dag, m, pars, cfg, ctx, (r, ctx) -> ctx)
+    ctx =  (dag = MetaGraph(DiGraph(), Label = Tuple{Symbol, Any}),)
+    ctx = gg_call(getdag, m, pars, cfg, ctx, (r, ctx) -> ctx)
+    return ctx.dag
 end
 
 # When a Tilde primitive `f` is called, every `g(args...)` is converted to
 # `call(f, g, args...)` 
-function call(::typeof(dag), g, args...; kwargs...)
-    val = g(map(markov_value, args)...; map(markov_value, kwargs)...)
-    parents = union(map(markov_parents, args)..., map(ctx_meta, kwargs)...)
+function call(::typeof(getdag), g, args...)
+    val = g(map(markov_value, args)...)
+    parents = if isempty(args)
+        Set{Tuple{Symbol, Any}}()
+    else
+        union(map(markov_parents, args)...)
+    end
     MarkovContext(val, parents)
 end
 
-@inline function tilde(::typeof(dag), x::MaybeObserved{X}, lens, d, pars, ctx) where {X}
+@inline function tilde(::typeof(getdag), x::MaybeObserved{X}, lens, d, pars, ctx) where {X}
+    dag = ctx.dag
     for p in markov_parents(d)
+        # Make sure vertices exist
+        dag[p] = nothing
+        dag[(X, lens)] = nothing
         # Add a new edge in the DAG
-        ctx.dag[p, Set(((X, lens),))] = nothing
+        dag[p, (X, lens)] = nothing
     end
-    (MarkovContext(x, (X, lens)), ctx, ctx.dag)
+    (MarkovContext(value(x), Set{Tuple{Symbol, Any}}([(X, lens)])), ctx, dag)
 end
 

@@ -43,7 +43,7 @@ function make_body(M, f, ast::Expr, retfun, argsT, obsT, parsT)
                 inobs = inkeys(sx, obsT)
                 # inpars = inkeys(sx, parsT)
                 rhs = unsolve(rhs)
-                
+     
                 obj = inobs ? :($Observed{$qx}($x)) : (x ∈ knownvars ? :($Unobserved{$qx}($x)) : :($Unobserved{$qx}(missing)))
                 st = :(($x, _ctx, _retn) = $tilde($f, $obj, $l, $rhs, _cfg, _ctx))
                 # qst = QuoteNode(st)
@@ -55,9 +55,7 @@ function make_body(M, f, ast::Expr, retfun, argsT, obsT, parsT)
 
                 q
             end
-
-            :($g($(args...); $(kwargs...))) => :(call($f, $g, $(args...); $(kwargs...)))
-
+            
             :(return $r) => :(return $retfun($r, _ctx))
             
             Expr(:scoped, new_scope, ex) => begin
@@ -71,7 +69,7 @@ function make_body(M, f, ast::Expr, retfun, argsT, obsT, parsT)
     end
 
     body = go(@q begin 
-            $(solve_scope(opticize(ast)))
+            $(solve_scope(opticize(callify(f, ast))))
     end) |> unsolve |> MacroTools.flatten
 
     body
