@@ -36,7 +36,7 @@ function func_arg(@nospecialize(ex))::FuncArg
             "Try\n" *
             "  f(x...) = _f(x)\n" *
             "  @gg _f(x) = ...\n" *
-            "See more at: https://github.com/JuliaStaging/GeneralizedGenerated.jl/issues/38",
+            "See more at: https://github.com/JuliaStaging/GeneralizedGenerated.jl/issues/38"
         )
         @case _
         error("GG does not understand the argument $ex.")

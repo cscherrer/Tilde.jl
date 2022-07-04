@@ -10,14 +10,14 @@ function lens_compile(ex, cache, value)
         updated = Expr(
             :let,
             Expr(:block, :($cache = $cache.$b), :($value = $d)),
-            :($field_update($cache, $(Val(c)), $value)),
+            :($field_update($cache, $(Val(c)), $value))
         )
         lens_compile(:($a.$b = $updated), cache, value)
         @when :($a.$(b::Symbol) = $c) = ex
         Expr(
             :let,
             Expr(:block, :($cache = $a), :($value = $c)),
-            :($field_update($cache, $(Val(b)), $value)),
+            :($field_update($cache, $(Val(b)), $value))
         )
         @otherwise
         error("Malformed update notation $ex, expect the form like 'a.b = c'.")

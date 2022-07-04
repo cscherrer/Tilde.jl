@@ -27,8 +27,6 @@ function callify(g, ast)
         else
             return Expr(:call, call, g, map(f, args)...)
         end
-
-        
     end
 
     foldast(leaf, branch)(ast)
@@ -64,7 +62,6 @@ end
 # macro call(expr)
 #     callify(expr)
 # end
-
 
 # julia> callify(:(f(g(x,y))))
 # :(call(f, call(g, x, y)))

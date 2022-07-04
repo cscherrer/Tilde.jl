@@ -25,7 +25,7 @@ function compress_impl!(arg::Argument)
     meta, default = compress_impl!(arg.default)
     encoded = Call(
         Constructor{Argument}(),
-        tuple(compress(arg.name), compress(arg.type), default),
+        tuple(compress(arg.name), compress(arg.type), default)
     )
     may_cache_call(meta, encoded)
 end
@@ -44,7 +44,7 @@ function _ass_positional_args!(
     assign_block::Vector{Expr},
     args::List{Argument},
     ninput::Int,
-    pargs::Symbol,
+    pargs::Symbol
 )
     i = 1
     for arg in args
@@ -82,7 +82,7 @@ _get_kwds(::Type{Base.Iterators.Pairs{A,B,C,NamedTuple{Kwds,D}}}) where {Kwds,A,
 
 @generated function (::RuntimeFn{Args,Kwargs,Body})(
     pargs...;
-    pkwargs...,
+    pkwargs...
 ) where {Args,Kwargs,Body}
     args = from_type(Args)
     kwargs = from_type(Kwargs)
