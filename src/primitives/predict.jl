@@ -68,7 +68,7 @@ end
     if X ∈ N
         quote
             # @info "$X ∈ N"
-            xnew = set(x.value, Lens!!(lens), lens(getproperty(pars, X)))
+            xnew = set(value(x), Lens!!(lens), lens(getproperty(pars, X)))
             # ctx = merge(ctx, NamedTuple{(X,)}((xnew,)))
             (xnew, ctx, ctx)
         end
@@ -76,9 +76,9 @@ end
         quote
             # @info "$X ∉ N"
             # In this case x == Unobserved(missing)
-            xnew = set(x, Lens!!(lens), f(d, missing))
-            ctx′ = merge(ctx, NamedTuple{(X,)}((xnew,)))
-            (xnew, ctx′, nothing)
+            xnew = set(value(x), Lens!!(lens), f(d, missing))
+            ctx = merge(ctx, NamedTuple{(X,)}((xnew,)))
+            (xnew, ctx, ctx)
         end
     end
 end
