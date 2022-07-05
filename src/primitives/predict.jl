@@ -61,7 +61,7 @@ end
 
 @generated function tilde_predict(
     f,
-    x::MaybeObserved{X},
+    x::Unobserved{X},
     lens,
     d,
     pars::NamedTuple{N},
