@@ -27,15 +27,14 @@ end
     return result
 end
 
-@inline function tilde(::typeof(predict), lens, xname, x, d, cfg, ctx)
-    tilde_predict(cfg.f, lens, xname, x, d, cfg.pars, ctx)
+@inline function tilde(::typeof(predict), x, lens, d, cfg, ctx)
+    tilde_predict(cfg.f, x, lens, d, cfg.pars, ctx)
 end
 
 @generated function tilde_predict(
     f,
+    x::Observed{X},
     lens,
-    ::StaticSymbol{X},
-    x::Observed,
     d,
     pars::NamedTuple{N},
     ctx,
@@ -60,9 +59,8 @@ end
 
 @generated function tilde_predict(
     f,
+    x::Unobserved{X},
     lens,
-    ::StaticSymbol{X},
-    x::Unobserved,
     d,
     pars::NamedTuple{N},
     ctx,

@@ -9,6 +9,27 @@ function callify(g, ast)
     leaf(x) = x
     function branch(f, head, args)
         default() = Expr(head, map(f, args)...)
+
+        # Convert `for` to `while`
+        if head == :for 
+            arg1 = args[1]
+            @assert arg1.head == :(=)
+            a,A0 = arg1.args
+            A0 = callify(g, A0)
+            @gensym temp 
+            @gensym state
+            @gensym A
+            return quote
+                $A = $A0
+                $temp = $call($g, iterate, $A)
+                while $markov_value($temp) !== nothing
+                    $a, $state = $temp 
+                    $(args[2])
+                    $temp = $call($g, iterate, $A, $state)
+                end
+            end
+        end
+
         head == :call || return default()
 
         if first(args) == :~ && length(args) == 3
@@ -29,7 +50,7 @@ function callify(g, ast)
         end
     end
 
-    foldast(leaf, branch)(ast)
+    foldast(leaf, branch)(ast) |> MacroTools.flatten
 end
 
 # struct Provenance{T,S}

@@ -33,5 +33,5 @@ end
     cfg,
     ctx::NamedTuple,
 ) where {X}
-    (value(x), ctx, nothing)
+    (lens(value(x)), ctx, nothing)
 end

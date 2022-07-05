@@ -46,14 +46,13 @@ end
 
 @inline function tilde(
     ::typeof(unsafe_logdensityof),
+    x::MaybeObserved{X},
     lens,
-    xname,
-    x,
     d,
     cfg,
     ctx::NamedTuple,
-)
+) where {X}
     x = value(x)
     @reset ctx.ℓ += MeasureBase.unsafe_logdensityof(d, lens(x))
-    (x, ctx, ctx.ℓ)
+    (x, ctx, nothing)
 end
