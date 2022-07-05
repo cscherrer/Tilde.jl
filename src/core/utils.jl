@@ -345,3 +345,19 @@ narrow_array(x) = collect(Base.Generator(identity, x))
 function parse_optic(ex)
     unescape.(Accessors.parse_obj_optic(ex))
 end
+
+anyfy(x) = x
+anyfy(x::AbstractArray) = collect(Any, x)
+
+function anyfy(mc::ModelClosure)
+    m = model(mc)
+    a = rmap(anyfy, argvals(mc))
+    m(a)
+end
+
+function anyfy(mp::ModelPosterior)
+    m = model(mp)
+    a = rmap(anyfy, argvals(mp))
+    o = rmap(anyfy, observations(mp))
+    m(a) | o
+end

@@ -13,6 +13,8 @@ end
 end
 
 @inline function predict(f, m::AbstractConditionalModel, pars::NamedTuple)
+    m = anyfy(m)
+    pars = rmap(anyfy, pars) 
     cfg = (f = f, pars = pars)
     ctx = NamedTuple()
     gg_call(predict, m, pars, cfg, ctx, (r, ctx) -> r)
@@ -59,7 +61,7 @@ end
 
 @generated function tilde_predict(
     f,
-    x::Unobserved{X},
+    x::MaybeObserved{X},
     lens,
     d,
     pars::NamedTuple{N},
