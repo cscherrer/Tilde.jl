@@ -22,7 +22,7 @@ function callify(g, ast)
             return quote
                 $A = $A0
                 $temp = $call($g, iterate, $A)
-                while $markov_value($temp) !== nothing
+                while $temp !== nothing
                     $a, $state = $temp 
                     $(args[2])
                     $temp = $call($g, iterate, $A, $state)
