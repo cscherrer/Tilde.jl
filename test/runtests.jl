@@ -4,7 +4,7 @@ import TransformVariables as TV
 using Aqua
 using Tilde
 
-Aqua.test_all(Tilde; ambiguities=false, unbound_args=false)
+Aqua.test_all(Tilde; ambiguities=false)
 
 include("examples-list.jl")
 

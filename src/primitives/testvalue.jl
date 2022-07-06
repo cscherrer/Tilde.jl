@@ -14,26 +14,24 @@ end
 
 @inline function tilde(
     ::typeof(testvalue),
+    x::Unobserved{X},
     lens,
-    xname,
-    x::Unobserved,
     d,
     cfg,
     ctx::NamedTuple,
-)
-    xnew = set(x.value, Lens!!(lens), testvalue(d))
-    ctx′ = merge(ctx, NamedTuple{(dynamic(xname),)}((xnew,)))
+) where {X}
+    xnew = set(value(x), Lens!!(lens), testvalue(d))
+    ctx′ = merge(ctx, NamedTuple{(X,)}((xnew,)))
     (xnew, ctx′, nothing)
 end
 
 @inline function tilde(
     ::typeof(testvalue),
+    x::Observed{X},
     lens,
-    xname,
-    x::Observed,
     d,
     cfg,
     ctx::NamedTuple,
-)
-    (x.value, ctx, nothing)
+) where {X}
+    (lens(value(x)), ctx, nothing)
 end

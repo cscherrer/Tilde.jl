@@ -4,27 +4,73 @@ using TupleVectors: chainvec
 export rand
 EmptyNTtype = NamedTuple{(),Tuple{}} where {T<:Tuple}
 
-@inline function Base.rand(rng::AbstractRNG, d::AbstractConditionalModel, N::Int)
-    r = chainvec(rand(rng, d), N)
-    for j in 2:N
-        @inbounds r[j] = rand(rng, d)
-    end
-    return r
+@inline function Base.rand(m::ModelClosure, args...; kwargs...)
+    rand(GLOBAL_RNG, Float64, m, args...; kwargs...)
 end
 
-@inline Base.rand(d::AbstractConditionalModel, N::Int) = rand(GLOBAL_RNG, d, N)
+@inline function Base.rand(rng::AbstractRNG, m::ModelClosure, args...; kwargs...)
+    rand(rng, Float64, m, args...; kwargs...)
+end
 
-@inline function Base.rand(m::AbstractConditionalModel; kwargs...)
-    rand(GLOBAL_RNG, m; kwargs...)
+@inline function Base.rand(::Type{T_rng}, m::ModelClosure, args...; kwargs...) where {T_rng}
+    rand(GLOBAL_RNG, T_rng, m, args...; kwargs...)
+end
+
+@inline function Base.rand(m::ModelClosure, d::Integer, dims::Integer...; kwargs...)
+    rand(GLOBAL_RNG, Float64, m, d, dims...; kwargs...)
 end
 
 @inline function Base.rand(
     rng::AbstractRNG,
-    m::AbstractConditionalModel;
+    m::ModelClosure,
+    d::Integer,
+    dims::Integer...;
+    kwargs...,
+)
+    rand(rng, Float64, m, d, dims...; kwargs...)
+end
+
+@inline function Base.rand(
+    ::Type{T_rng},
+    m::ModelClosure,
+    d::Integer,
+    dims::Integer...;
+    kwargs...,
+) where {T_rng}
+    rand(GLOBAL_RNG, T_rng, m, d, dims...; kwargs...)
+end
+
+@inline function Base.rand(
+    rng::AbstractRNG,
+    ::Type{T_rng},
+    d::ModelClosure,
+    N::Integer,
+    v::Vararg{Integer},
+) where {T_rng}
+    @assert isempty(v)
+    r = chainvec(rand(rng, T_rng, d), N)
+    for j in 2:N
+        @inbounds r[j] = rand(rng, T_rng, d)
+    end
+    return r
+end
+
+@inline Base.rand(d::ModelClosure, N::Int) = rand(GLOBAL_RNG, d, N)
+
+@inline function Base.rand(m::ModelClosure; kwargs...)
+    rand(GLOBAL_RNG, m; kwargs...)
+end
+
+@inline Base.rand(rng::AbstractRNG, m::ModelClosure) = rand(rng, Float64, m)
+
+@inline function Base.rand(
+    rng::AbstractRNG,
+    ::Type{T_rng},
+    m::ModelClosure;
     ctx = NamedTuple(),
     retfun = (r, ctx) -> r,
-)
-    cfg = (rng = rng,)
+) where {T_rng}
+    cfg = (rng = rng, T_rng = T_rng)
     gg_call(rand, m, NamedTuple(), cfg, ctx, retfun)
 end
 
@@ -32,57 +78,24 @@ end
 # ctx::NamedTuple
 @inline function tilde(
     ::typeof(Base.rand),
+    x::Unobserved{X},
     lens,
-    xname,
-    x::Unobserved,
     d,
     cfg,
     ctx::NamedTuple,
-)
-    xnew = set(x.value, Lens!!(lens), rand(cfg.rng, d))
-    ctx′ = merge(ctx, NamedTuple{(dynamic(xname),)}((xnew,)))
+) where {X}
+    xnew = set(value(x), Lens!!(lens), rand(cfg.rng, d))
+    ctx′ = merge(ctx, NamedTuple{(X,)}((xnew,)))
     (xnew, ctx′, nothing)
 end
 
 @inline function tilde(
     ::typeof(Base.rand),
+    x::Observed{X},
     lens,
-    xname,
-    x::Observed,
     d,
     cfg,
     ctx::NamedTuple,
-)
-    (x.value, ctx, nothing)
-end
-
-###############################################################################
-# ctx::Dict
-
-@inline function tilde(
-    ::typeof(Base.rand),
-    lens::typeof(identity),
-    xname,
-    x,
-    d,
-    cfg,
-    ctx::Dict,
-)
-    x = rand(cfg.rng, d)
-    ctx[dynamic(xname)] = x
-    (x, ctx, nothing)
-end
-
-@inline function tilde(
-    ::typeof(Base.rand),
-    lens,
-    xname,
-    x,
-    m::AbstractConditionalModel,
-    cfg,
-    ctx::Dict,
-)
-    args = get(cfg.args, dynamic(xname), Dict())
-    cfg = merge(cfg, (args = args,))
-    tilde(rand, lens, xname, x, m(cfg.args), cfg, ctx)
+) where {X}
+    (value(x), ctx, nothing)
 end

@@ -18,8 +18,15 @@ using Accessors
     gg_call(logdensityof, cm, pars, cfg, ctx, retfun)
 end
 
-@inline function tilde(::typeof(logdensityof), lens, xname, x, d, cfg, ctx::NamedTuple)
-    x = x.value
+@inline function tilde(
+    ::typeof(logdensityof),
+    x::MaybeObserved{X},
+    lens,
+    d,
+    cfg,
+    ctx::NamedTuple,
+) where {X}
+    x = value(x)
     insupport(d, lens(x)) || return (x, ctx, ReturnNow(-Inf))
     @reset ctx.ℓ += MeasureBase.unsafe_logdensityof(d, lens(x))
     (x, ctx, nothing)
@@ -39,14 +46,13 @@ end
 
 @inline function tilde(
     ::typeof(unsafe_logdensityof),
+    x::MaybeObserved{X},
     lens,
-    xname,
-    x,
     d,
     cfg,
     ctx::NamedTuple,
-)
-    x = x.value
+) where {X}
+    x = value(x)
     @reset ctx.ℓ += MeasureBase.unsafe_logdensityof(d, lens(x))
-    (x, ctx, ctx.ℓ)
+    (x, ctx, nothing)
 end

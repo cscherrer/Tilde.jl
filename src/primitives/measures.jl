@@ -61,32 +61,21 @@ export measures
     rmap(f, nt)
 end
 
-@inline function tilde(
-    ::typeof(measures),
-    ::typeof(identity),
-    xname,
-    ::Unobserved,
-    d,
-    cfg,
-    ctx,
-)
+@inline function tilde(::typeof(measures), x::Unobserved{X}, d, cfg, ctx) where {X}
     x = testvalue(d)
-    xname = dynamic(xname)
-    ctx = merge(ctx, NamedTuple{(xname,)}((d,)))
+    ctx = merge(ctx, NamedTuple{X}((d,)))
     (x, ctx, ctx)
 end
 
-@inline function tilde(::typeof(measures), lens, xname, x::Unobserved, d, cfg, ctx)
-    xname = dynamic(xname)
-    ctx = set(ctx, PropertyLens{xname}() ⨟ Lens!!(lens), d)
+@inline function tilde(::typeof(measures), x::Unobserved{X}, lens, d, cfg, ctx) where {X}
+    ctx = set(ctx, PropertyLens{X}() ⨟ Lens!!(lens), d)
 
-    xnew = getproperty(cfg.pars, xname)
+    xnew = getproperty(cfg.pars, X)
     (xnew, ctx, ctx)
 end
 
-@inline function tilde(::typeof(measures), lens, xname, x::Observed, d, cfg, ctx)
-    x = x.value
-    (x, ctx, ctx)
+@inline function tilde(::typeof(measures), x::Observed{X}, lens, d, cfg, ctx) where {X}
+    (value(x), ctx, ctx)
 end
 
 function as(mdl::AbstractConditionalModel)

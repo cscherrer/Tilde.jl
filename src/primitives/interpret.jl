@@ -13,13 +13,7 @@ function make_body(M, f, m::AbstractModel)
     make_body(M, body(m))
 end
 
-struct Observed{T}
-    value::T
-end
-
-struct Unobserved{T}
-    value::T
-end
+call(f, g, args...; kwargs...) = g(args...; kwargs...)
 
 function make_body(M, f, ast::Expr, retfun, argsT, obsT, parsT)
     knownvars = union(keys.(schema.((argsT, obsT, parsT)))...)
@@ -43,18 +37,22 @@ function make_body(M, f, ast::Expr, retfun, argsT, obsT, parsT)
                 # X = to_type(unsolved_lhs)
                 # M = to_type(unsolve(rhs))
 
-                inargs = inkeys(sx, argsT)
+                # inargs = inkeys(sx, argsT)
                 inobs = inkeys(sx, obsT)
-                inpars = inkeys(sx, parsT)
+                # inpars = inkeys(sx, parsT)
                 rhs = unsolve(rhs)
 
-                xval = if inobs
-                    :($Observed($x))
+                obj = if inobs
+                    :($Observed{$qx}($x))
                 else
-                    (x ∈ knownvars ? :($Unobserved($x)) : :($Unobserved(missing)))
+                    (if x ∈ knownvars
+                        :($Unobserved{$qx}($x))
+                    else
+                        :($Unobserved{$qx}(missing))
+                    end)
                 end
-                st = :(($x, _ctx, _retn) = $tilde($f, $l, $sx, $xval, $rhs, _cfg, _ctx))
-                qst = QuoteNode(st)
+                st = :(($x, _ctx, _retn) = $tilde($f, $obj, $l, $rhs, _cfg, _ctx))
+                # qst = QuoteNode(st)
                 q = quote
                     # println($qst)
                     $st
@@ -76,9 +74,10 @@ function make_body(M, f, ast::Expr, retfun, argsT, obsT, parsT)
         end
     end
 
-    body = go(@q begin
-        $(solve_scope(opticize(ast)))
-    end) |> unsolve |> MacroTools.flatten
+    body =
+        go(@q begin
+            $(solve_scope(opticize(callify(f, ast))))
+        end) |> unsolve |> MacroTools.flatten
 
     body
 end

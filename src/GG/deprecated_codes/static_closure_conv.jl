@@ -39,6 +39,11 @@ function mk_closure_static(expr, toplevel::Vector{Expr})
                                         $Closure{$glob_name,typeof(frees)}(frees)
                                     end
                                 )
+                                ret = :(
+                                    let frees = $closure_arg
+                                        $Closure{$glob_name,typeof(frees)}(frees)
+                                    end
+                                )
                                 (fn_expr, ret)
                             end
 
