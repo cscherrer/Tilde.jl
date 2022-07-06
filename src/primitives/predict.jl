@@ -2,6 +2,23 @@ using Random: GLOBAL_RNG
 using TupleVectors
 export predict
 
+
+anyfy(x) = x
+anyfy(x::AbstractArray) = collect(Any, x)
+
+function anyfy(mc::ModelClosure)
+    m = model(mc)
+    a = rmap(anyfy, argvals(mc))
+    m(a)
+end
+
+function anyfy(mp::ModelPosterior)
+    m = model(mp)
+    a = rmap(anyfy, argvals(mp))
+    o = rmap(anyfy, observations(mp))
+    m(a) | o
+end
+
 @inline function predict(m::AbstractConditionalModel, pars)
     f(d, x) = rand(GLOBAL_RNG, d)
     return predict(f, m, pars)
