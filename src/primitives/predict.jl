@@ -19,15 +19,80 @@ function anyfy(mp::ModelPosterior)
     m(a) | o
 end
 
+###############################################################################
+# `predict` for forward random sampling
+
 @inline function predict(m::AbstractConditionalModel, pars)
-    f(d, x) = rand(GLOBAL_RNG, d)
-    return predict(f, m, pars)
+    predict(GLOBAL_RNG, m, pars)
 end
 
 @inline function predict(rng::AbstractRNG, m::AbstractConditionalModel, pars)
-    f(d, x) = rand(rng, d)
-    return predict(f, m, pars)
+    predict_rand(rng::AbstractRNG, m::AbstractConditionalModel, pars)
 end
+
+@inline function predict_rand(rng::AbstractRNG, m::AbstractConditionalModel, pars)
+    cfg = (rng = rng, pars = pars)
+    ctx = NamedTuple()
+    gg_call(predict_rand, m, pars, cfg, ctx, (r, ctx) -> r)
+end
+
+
+@generated function tilde_predict(
+    ::typeof(predict_rand),
+    x::Observed{X},
+    lens,
+    d,
+    pars::NamedTuple{N},
+    ctx,
+) where {X,N}
+    if X ∈ N
+        quote
+            # @info "$X ∈ N"
+            xnew = set(x.value, Lens!!(lens), lens(getproperty(pars, X)))
+            # ctx = merge(ctx, NamedTuple{(X,)}((xnew,)))
+            (xnew, ctx, ctx)
+        end
+    else
+        quote
+            # @info "$X ∉ N"
+            x = x.value
+            xnew = set(copy(x), Lens!!(lens), f(d, lens(x)))
+            ctx = merge(ctx, NamedTuple{(X,)}((xnew,)))
+            (xnew, ctx, ctx)
+        end
+    end
+end
+
+@generated function tilde_predict(
+    ::typeof(predict_rand),
+    x::Unobserved{X},
+    lens,
+    d,
+    pars::NamedTuple{N},
+    ctx,
+) where {X,N}
+    if X ∈ N
+        quote
+            # @info "$X ∈ N"
+            xnew = set(value(x), Lens!!(lens), lens(getproperty(pars, X)))
+            # ctx = merge(ctx, NamedTuple{(X,)}((xnew,)))
+            (xnew, ctx, ctx)
+        end
+    else
+        quote
+            # @info "$X ∉ N"
+            # In this case x == Unobserved(missing)
+            xnew = set(value(x), Lens!!(lens), f(d, missing))
+            ctx = merge(ctx, NamedTuple{(X,)}((xnew,)))
+            (xnew, ctx, ctx)
+        end
+    end
+end
+
+
+###############################################################################
+
+
 
 @inline function predict(f, m::AbstractConditionalModel, pars::NamedTuple)
     m = anyfy(m)

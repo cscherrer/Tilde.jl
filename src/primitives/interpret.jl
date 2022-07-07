@@ -76,7 +76,7 @@ function make_body(M, f, ast::Expr, retfun, argsT, obsT, parsT)
 
     body =
         go(@q begin
-            $(solve_scope(opticize(callify(f, ast))))
+            $(solve_scope(opticize(ast)))
         end) |> unsolve |> MacroTools.flatten
 
     body
