@@ -1,4 +1,4 @@
-using Random: GLOBAL_RNG
+using Random: GLOBAL_RNG, AbstractRNG
 using TupleVectors
 export predict
 
@@ -26,7 +26,7 @@ end
     predict(GLOBAL_RNG, m, pars)
 end
 
-@inline function predict(rng::AbstractRNG, m::AbstractConditionalModel, pars)
+@inline function predict(rng::AbstractRNG, m::AbstractConditionalModel, pars::NamedTuple)
     predict_rand(rng::AbstractRNG, m::AbstractConditionalModel, pars)
 end
 
@@ -37,35 +37,15 @@ end
 end
 
 
-@generated function tilde_predict(
-    ::typeof(predict_rand),
-    x::Observed{X},
-    lens,
-    d,
-    pars::NamedTuple{N},
-    ctx,
-) where {X,N}
-    if X ∈ N
-        quote
-            # @info "$X ∈ N"
-            xnew = set(x.value, Lens!!(lens), lens(getproperty(pars, X)))
-            # ctx = merge(ctx, NamedTuple{(X,)}((xnew,)))
-            (xnew, ctx, ctx)
-        end
-    else
-        quote
-            # @info "$X ∉ N"
-            x = x.value
-            xnew = set(copy(x), Lens!!(lens), f(d, lens(x)))
-            ctx = merge(ctx, NamedTuple{(X,)}((xnew,)))
-            (xnew, ctx, ctx)
-        end
-    end
+@inline function tilde(::typeof(predict_rand), x, lens, d, cfg, ctx)
+    tilde_predict(cfg.rng, x, lens, d, cfg.pars, ctx)
 end
 
+
+
 @generated function tilde_predict(
-    ::typeof(predict_rand),
-    x::Unobserved{X},
+    rng,
+    x::MaybeObserved{X},
     lens,
     d,
     pars::NamedTuple{N},
@@ -81,8 +61,7 @@ end
     else
         quote
             # @info "$X ∉ N"
-            # In this case x == Unobserved(missing)
-            xnew = set(value(x), Lens!!(lens), f(d, missing))
+            xnew = set(value(x), Lens!!(lens), rand(rng, d))
             ctx = merge(ctx, NamedTuple{(X,)}((xnew,)))
             (xnew, ctx, ctx)
         end
@@ -115,54 +94,54 @@ end
     tilde_predict(cfg.f, x, lens, d, cfg.pars, ctx)
 end
 
-@generated function tilde_predict(
-    f,
-    x::Observed{X},
-    lens,
-    d,
-    pars::NamedTuple{N},
-    ctx,
-) where {X,N}
-    if X ∈ N
-        quote
-            # @info "$X ∈ N"
-            xnew = set(x.value, Lens!!(lens), lens(getproperty(pars, X)))
-            # ctx = merge(ctx, NamedTuple{(X,)}((xnew,)))
-            (xnew, ctx, ctx)
-        end
-    else
-        quote
-            # @info "$X ∉ N"
-            x = x.value
-            xnew = set(copy(x), Lens!!(lens), f(d, lens(x)))
-            ctx = merge(ctx, NamedTuple{(X,)}((xnew,)))
-            (xnew, ctx, ctx)
-        end
-    end
-end
+# @generated function tilde_predict(
+#     f,
+#     x::Observed{X},
+#     lens,
+#     d,
+#     pars::NamedTuple{N},
+#     ctx,
+# ) where {X,N}
+#     if X ∈ N
+#         quote
+#             # @info "$X ∈ N"
+#             xnew = set(x.value, Lens!!(lens), lens(getproperty(pars, X)))
+#             # ctx = merge(ctx, NamedTuple{(X,)}((xnew,)))
+#             (xnew, ctx, ctx)
+#         end
+#     else
+#         quote
+#             # @info "$X ∉ N"
+#             x = x.value
+#             xnew = set(copy(x), Lens!!(lens), f(d, lens(x)))
+#             ctx = merge(ctx, NamedTuple{(X,)}((xnew,)))
+#             (xnew, ctx, ctx)
+#         end
+#     end
+# end
 
-@generated function tilde_predict(
-    f,
-    x::Unobserved{X},
-    lens,
-    d,
-    pars::NamedTuple{N},
-    ctx,
-) where {X,N}
-    if X ∈ N
-        quote
-            # @info "$X ∈ N"
-            xnew = set(value(x), Lens!!(lens), lens(getproperty(pars, X)))
-            # ctx = merge(ctx, NamedTuple{(X,)}((xnew,)))
-            (xnew, ctx, ctx)
-        end
-    else
-        quote
-            # @info "$X ∉ N"
-            # In this case x == Unobserved(missing)
-            xnew = set(value(x), Lens!!(lens), f(d, missing))
-            ctx = merge(ctx, NamedTuple{(X,)}((xnew,)))
-            (xnew, ctx, ctx)
-        end
-    end
-end
+# @generated function tilde_predict(
+#     f,
+#     x::Unobserved{X},
+#     lens,
+#     d,
+#     pars::NamedTuple{N},
+#     ctx,
+# ) where {X,N}
+#     if X ∈ N
+#         quote
+#             # @info "$X ∈ N"
+#             xnew = set(value(x), Lens!!(lens), lens(getproperty(pars, X)))
+#             # ctx = merge(ctx, NamedTuple{(X,)}((xnew,)))
+#             (xnew, ctx, ctx)
+#         end
+#     else
+#         quote
+#             # @info "$X ∉ N"
+#             # In this case x == Unobserved(missing)
+#             xnew = set(value(x), Lens!!(lens), f(d, missing))
+#             ctx = merge(ctx, NamedTuple{(X,)}((xnew,)))
+#             (xnew, ctx, ctx)
+#         end
+#     end
+# end
