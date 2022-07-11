@@ -1,10 +1,6 @@
 struct ModelClosure{M,V,P} <: AbstractConditionalModel{M,V,NamedTuple{(),Tuple{}},P}
     model::M
     argvals::V
-
-    function ModelClosure(m::Model{A,B,M,P}, v::V) where {A,B,M,P,V}
-        ModelClosure{Model{A,B,M,P}, V, P}(m,v)
-    end
 end
 
 function setproj(c::ModelClosure{M,V}, f::F) where {M,V,F}
@@ -31,7 +27,7 @@ end
 
 model(c::ModelClosure) = c.model
 
-(m::AbstractModel)(nt::NamedTuple) = ModelClosure(m, nt)
+(m::AbstractModel{A,B,M,P})(nt::NT) where {A,B,M,P,NT<:NamedTuple} = ModelClosure{Model{A,B,M,P}, NT, P}(m,nt)
 
 (mc::ModelClosure)(nt::NamedTuple) = ModelClosure(model(mc), merge(mc.argvals, nt))
 
