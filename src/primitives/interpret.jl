@@ -43,6 +43,7 @@ function make_body(M, f, ast::Expr, retfun, argsT, obsT, parsT)
                 rhs = unsolve(rhs)
 
                 obj = if inobs
+                    # TODO: Even if `x` is observed, we may have `lens(x) == missing`
                     :($Observed{$qx}($x))
                 else
                     (if x ∈ knownvars
