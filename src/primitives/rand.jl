@@ -89,13 +89,13 @@ end
     (xnew, ctx′, nothing)
 end
 
-@inline function tilde(
-    ::typeof(Base.rand),
-    x::Observed{X},
-    lens,
-    d,
-    cfg,
-    ctx::NamedTuple,
-) where {X}
-    (value(x), ctx, nothing)
-end
+# @inline function tilde(
+#     ::typeof(Base.rand),
+#     x::Observed{X},
+#     lens,
+#     d,
+#     cfg,
+#     ctx::NamedTuple,
+# ) where {X}
+#     (value(x), ctx, nothing)
+# end
