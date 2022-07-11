@@ -172,7 +172,7 @@ end
 
 
 
-end
+
 
 
 @testset "Nested models" begin
@@ -198,4 +198,6 @@ end
 
     @test rand(m(); ctx=()) isa Bool
     @test logdensity(m(), rand(m())) isa Float64
+end
+
 end
