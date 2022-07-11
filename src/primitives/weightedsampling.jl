@@ -27,7 +27,7 @@ end
     x = value(x)
     Δℓ = logdensityof(d, lens(x))
     @reset ctx.ℓ += Δℓ
-    (x, ctx, ctx)
+    (x, ctx)
 end
 
 @inline function tilde(
@@ -41,5 +41,5 @@ end
     xnew = set(value(x), Lens!!(lens), rand(cfg.rng, d))
     pars = merge(ctx.pars, NamedTuple{(X,)}((xnew,)))
     ctx = merge(ctx, (pars = pars,))
-    (xnew, ctx, nothing)
+    (xnew, ctx)
 end

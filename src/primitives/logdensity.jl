@@ -28,16 +28,16 @@ end
     x = value(x)
     insupport(d, lens(x)) || return (x, ctx, ReturnNow(-Inf))
     @reset ctx.ℓ += MeasureBase.unsafe_logdensityof(d, lens(x))
-    (x, ctx, nothing)
+    (x, ctx)
 end
 
 @inline function MeasureBase.unsafe_logdensityof(
-    cm::AbstractConditionalModel,
+    cm::AbstractConditionalModel{M,A,O,typeof(first)},
     pars::NamedTuple;
     cfg = NamedTuple(),
     ctx = NamedTuple(),
     retfun = (r, ctx) -> ctx.ℓ,
-)
+) where {M,A,O}
     # cfg = merge(cfg, (pars=pars,))
     ctx = merge(ctx, (ℓ = 0.0,))
     gg_call(unsafe_logdensityof, cm, pars, cfg, ctx, retfun)
@@ -53,5 +53,5 @@ end
 ) where {X}
     x = value(x)
     @reset ctx.ℓ += MeasureBase.unsafe_logdensityof(d, lens(x))
-    (x, ctx, nothing)
+    (x, ctx)
 end

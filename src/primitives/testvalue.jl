@@ -22,7 +22,7 @@ end
 ) where {X}
     xnew = set(value(x), Lens!!(lens), testvalue(d))
     ctx′ = merge(ctx, NamedTuple{(X,)}((xnew,)))
-    (xnew, ctx′, nothing)
+    (xnew, ctx′)
 end
 
 @inline function tilde(
@@ -33,5 +33,5 @@ end
     cfg,
     ctx::NamedTuple,
 ) where {X}
-    (lens(value(x)), ctx, nothing)
+    (lens(value(x)), ctx)
 end

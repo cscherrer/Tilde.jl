@@ -86,7 +86,7 @@ end
 ) where {X}
     xnew = set(value(x), Lens!!(lens), rand(cfg.rng, d))
     ctx′ = merge(ctx, NamedTuple{(X,)}((xnew,)))
-    (xnew, ctx′, nothing)
+    (xnew, ctx′)
 end
 
 # @inline function tilde(

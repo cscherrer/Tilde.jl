@@ -56,14 +56,14 @@ end
             # @info "$X ∈ N"
             xnew = set(value(x), Lens!!(lens), lens(getproperty(pars, X)))
             # ctx = merge(ctx, NamedTuple{(X,)}((xnew,)))
-            (xnew, ctx, ctx)
+            (xnew, ctx)
         end
     else
         quote
             # @info "$X ∉ N"
             xnew = set(value(x), Lens!!(lens), rand(rng, d))
             ctx = merge(ctx, NamedTuple{(X,)}((xnew,)))
-            (xnew, ctx, ctx)
+            (xnew, ctx)
         end
     end
 end
