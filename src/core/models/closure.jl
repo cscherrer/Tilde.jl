@@ -1,6 +1,14 @@
-struct ModelClosure{M,A} <: AbstractConditionalModel{M,A,NamedTuple{(),Tuple{}}}
+struct ModelClosure{M,V,P} <: AbstractConditionalModel{M,V,NamedTuple{(),Tuple{}},P}
     model::M
-    argvals::A
+    argvals::V
+
+    function ModelClosure(m::Model{A,B,M,P}, v::V) where {A,B,M,P,V}
+        ModelClosure{Model{A,B,M,P}, V, P}(m,v)
+    end
+end
+
+function setproj(c::ModelClosure{M,V}, f::F) where {M,V,F}
+    ModelClosure{M,V,F}(setproj(model(c), f), argvals(c))
 end
 
 function Base.show(io::IO, mc::ModelClosure)
@@ -22,8 +30,6 @@ function observed(mc::ModelClosure{M,A}) where {M,A}
 end
 
 model(c::ModelClosure) = c.model
-
-ModelClosure(m::AbstractModel) = ModelClosure(m, NamedTuple())
 
 (m::AbstractModel)(nt::NamedTuple) = ModelClosure(m, nt)
 

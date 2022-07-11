@@ -1,6 +1,14 @@
-struct ModelPosterior{M,A,O} <: AbstractConditionalModel{M,A,O}
-    closure::ModelClosure{M,A}
+struct ModelPosterior{M,V,O,P} <: AbstractConditionalModel{M,V,O,P}
+    closure::ModelClosure{M,V,P}
     obs::O
+
+    function ModelPosterior(closure::ModelClosure{M,V,P}, obs::O) where {M,V,O,P}
+        ModelPosterior{ModelClosure{M,V,P}, O, P}(closure, obs)
+    end
+end
+
+function setproj(p::ModelPosterior{M,V,O}, f::F) where {M,V,O,F}
+    ModelPosterior{M,V,O,F}(setproj(p.closure, f), observations(p))
 end
 
 model(post::ModelPosterior) = model(post.closure)

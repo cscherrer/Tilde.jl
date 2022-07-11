@@ -1,14 +1,23 @@
-struct Model{A,B,M<:GG.TypeLevel} <: AbstractModel{A,B,M}
+struct Model{A,B,M<:GG.TypeLevel,P} <: AbstractModel{A,B,M,P}
     args::Vector{Symbol}
     body::Expr
+    jointproj::P
 end
 
 function Model(theModule::Module, args::Vector{Symbol}, body::Expr)
     A = NamedTuple{Tuple(args)}
     B = to_type(body)
     M = to_type(theModule)
-    return Model{A,B,M}(args, body)
+    return Model{A,B,M,typeof(last)}(args, body, last)
 end
+
+export latentof, manifestof, jointof
+
+setproj(m::Model{A,B,M}, f::F) where {A,B,M,F} = Model{A,B,M,F}(m.args, m.body, f)
+
+latentof(m) = setproj(m, first)
+manifestof(m) = setproj(m, last)
+jointof(m) = setproj(m, identity)
 
 model(m::Model) = m
 
@@ -37,10 +46,11 @@ end
 
 Base.show(io::IO, m::Model) = println(io, convert(Expr, m))
 
-function type2model(::Type{Model{A,B,M}}) where {A,B,M}
+function type2model(::Type{Model{A,B,M,P}}) where {A,B,M,P}
     args = Symbol[fieldnames(A)...]
     body = from_type(B)
-    Model{A,B,M}(args, body)
+    jointproj = P.instance
+    Model{A,B,M,P}(args, body, jointproj)
 end
 
 toargs(vs::Vector{Symbol}) = Tuple(vs)
