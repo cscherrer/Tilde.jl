@@ -1,4 +1,3 @@
-
 export logdensityof
 
 using NestedTuples: lazymerge
@@ -7,12 +6,12 @@ import MeasureTheory
 using Accessors
 
 @inline function MeasureBase.logdensityof(
-    cm::AbstractConditionalModel,
+    cm::AbstractConditionalModel{M,A,O,typeof(first)},
     pars::NamedTuple;
     cfg = NamedTuple(),
     ctx = NamedTuple(),
     retfun = (r, ctx) -> ctx.ℓ,
-)
+) where {M,A,O}
     # cfg = merge(cfg, (pars=pars,))
     ctx = merge(ctx, (ℓ = 0.0,))
     gg_call(logdensityof, cm, pars, cfg, ctx, retfun)
