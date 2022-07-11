@@ -52,6 +52,6 @@ end
     ctx::NamedTuple,
 ) where {X}
     x = value(x)
-    @reset ctx.ℓ += MeasureBase.unsafe_logdensityof(d, lens(x))
+    @reset ctx.ℓ += MeasureBase.unsafe_logdensityof(latentof(d), lens(x))
     (x, ctx)
 end

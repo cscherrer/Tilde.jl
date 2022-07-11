@@ -15,9 +15,14 @@ export latentof, manifestof, jointof
 
 setproj(m::Model{A,B,M}, f::F) where {A,B,M,F} = Model{A,B,M,F}(m.args, m.body, f)
 
-latentof(m) = setproj(m, first)
-manifestof(m) = setproj(m, last)
-jointof(m) = setproj(m, identity)
+latentof(m::AbstractModel) = setproj(m, first)
+manifestof(m::AbstractModel) = setproj(m, last)
+jointof(m::AbstractModel) = setproj(m, identity)
+
+latentof(m::AbstractConditionalModel) = setproj(m, first)
+manifestof(m::AbstractConditionalModel) = setproj(m, last)
+jointof(m::AbstractConditionalModel) = setproj(m, identity)
+
 
 model(m::Model) = m
 
