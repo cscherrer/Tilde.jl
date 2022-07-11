@@ -4,7 +4,7 @@ struct ModelClosure{M,V,P} <: AbstractConditionalModel{M,V,NamedTuple{(),Tuple{}
 end
 
 function setproj(c::ModelClosure{M,V}, f::F) where {M,V,F}
-    ModelClosure{M,V,F}(setproj(model(c), f), argvals(c))
+    setproj(model(c), f)(argvals(c))
 end
 
 function Base.show(io::IO, mc::ModelClosure)

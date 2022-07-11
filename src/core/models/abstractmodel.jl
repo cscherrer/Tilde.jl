@@ -19,6 +19,8 @@ abstract type AbstractModel{A,B,M,P} <: AbstractTransitionKernel end
 
 abstract type AbstractConditionalModel{M,Args,Obs,P} <: AbstractMeasure end
 
+getproj(::Type{<:AbstractConditionalModel{M,Args,Obs,P}}) where {M,Args,Obs,P} = MeasureBase.instance(P)
+
 argstype(::AbstractModel{A,B,M}) where {A,B,M} = A
 
 bodytype(::AbstractModel{A,B,M}) where {A,B,M} = B

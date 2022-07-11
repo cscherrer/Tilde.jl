@@ -15,7 +15,8 @@ end
 
 call(f, g, args...; kwargs...) = g(args...; kwargs...)
 
-function make_body(M, f, ast::Expr, retfun, argsT, obsT, parsT)
+function make_body(M, f, ast::Expr, proj, retfun, argsT, obsT, parsT, paramnames)
+    paramvals = Expr(:tuple, paramnames...) 
     knownvars = union(keys.(schema.((argsT, obsT, parsT)))...)
     function go(ex, scope = (bounds = Var[], freevars = Var[], bound_inits = Symbol[]))
         @match ex begin
@@ -41,7 +42,7 @@ function make_body(M, f, ast::Expr, retfun, argsT, obsT, parsT)
                 inobs = inkeys(sx, obsT)
                 # inpars = inkeys(sx, parsT)
                 rhs = unsolve(rhs)
-
+                    
                 obj = if inobs
                     # TODO: Even if `x` is observed, we may have `lens(x) == missing`
                     :($Observed{$qx}($x))
@@ -52,18 +53,20 @@ function make_body(M, f, ast::Expr, retfun, argsT, obsT, parsT)
                         :($Unobserved{$qx}(missing))
                     end)
                 end
-                st = :(($x, _ctx, _retn) = $tilde($f, $obj, $l, $rhs, _cfg, _ctx))
+                st = :(($x, _ctx) = $tilde($f, $obj, $l, $rhs, _cfg, _ctx))
                 # qst = QuoteNode(st)
                 q = quote
                     # println($qst)
                     $st
-                    _retn isa Tilde.ReturnNow && return _retn.value
+                    _ctx isa Tilde.ReturnNow && return _ctx.value
                 end
 
                 q
             end
 
-            :(return $r) => :(return $retfun($r, _ctx))
+            :(return $r) => quote
+                    return $retfun($proj(NamedTuple{$paramnames}($paramvals) => $r), _ctx)
+                end
 
             Expr(:scoped, new_scope, ex) => begin
                 go(ex, new_scope)
@@ -110,7 +113,10 @@ end
 
     f = MeasureBase.instance(F)
     _retfun = MeasureBase.instance(R)
-    body = make_body(M, f, body, _retfun, argsT, obsT, parsT)
+    paramnames = tuple(parameters(_m)...)
+    paramvals = Expr(:tuple, paramnames...) 
+    _proj = getproj(MC)
+    body = make_body(M, f, body, _proj, _retfun, argsT, obsT, parsT, paramnames)
 
     q = MacroTools.flatten(
         @q @inline function (_mc, _cfg, _ctx, _pars, _retfun)
@@ -120,7 +126,8 @@ end
             _cfg = merge(_cfg, (args = _args, obs = _obs, pars = _pars))
             $body
             # If body doesn't have a return, default to `return ctx`
-            return $_retfun(_ctx, _ctx)
+            _params = NamedTuple{$paramnames}($paramvals)
+            return $_retfun($_proj(_params => _params), _ctx)
         end
     )
 
