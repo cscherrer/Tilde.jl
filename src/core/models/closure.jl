@@ -3,9 +3,22 @@ struct ModelClosure{M,V,P} <: AbstractConditionalModel{M,V,NamedTuple{(),Tuple{}
     argvals::V
 end
 
+setproj(m::AbstractMeasure, ::typeof(first)) = latentof(m)
+setproj(m::AbstractMeasure, ::typeof(last)) = manifestof(m)
+setproj(m::AbstractMeasure, ::typeof(identity)) = jointof(m)
+
 function setproj(c::ModelClosure{M,V}, f::F) where {M,V,F}
     setproj(model(c), f)(argvals(c))
 end
+
+for f in [first, last, identity]
+    @eval begin
+        function setproj(c::ModelClosure{M,V}, ::typeof($f)) where {M,V}
+            setproj(model(c), $f)(argvals(c))
+        end
+    end
+end
+
 
 function Base.show(io::IO, mc::ModelClosure)
     println(io, "ModelClosure given")

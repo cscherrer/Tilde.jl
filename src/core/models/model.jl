@@ -13,6 +13,16 @@ end
 
 export latentof, manifestof, jointof
 
+
+
+for f in [first, last, identity]
+    @eval begin
+        function setproj(m::Model{A,B,M}, ::typeof($f)) where {A,B,M}
+            Model{A,B,M,typeof($f)}(m.args, m.body, $f)
+        end
+    end
+end
+
 setproj(m::Model{A,B,M}, f::F) where {A,B,M,F} = Model{A,B,M,F}(m.args, m.body, f)
 
 latentof(m::AbstractModel) = setproj(m, first)

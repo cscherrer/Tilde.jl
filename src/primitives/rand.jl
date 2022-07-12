@@ -70,8 +70,18 @@ end
     ctx = NamedTuple(),
     retfun = (r, ctx) -> r,
 ) where {T_rng}
-    cfg = (rng = rng, T_rng = T_rng)
+    cfg = (rng = rng, T_rng = T_rng, proj = getproj(m) )
     gg_call(rand, m, NamedTuple(), cfg, ctx, retfun)
+end
+
+function Base.rand(
+    ::AbstractRNG,
+    ::Type,
+    m::AbstractModel,
+    args...;
+    kwargs...
+)
+    @error "`rand` called on Model without arugments. Try `m(args)` or `m()` if the model has no arguments"
 end
 
 ###############################################################################
@@ -84,8 +94,14 @@ end
     cfg,
     ctx::NamedTuple,
 ) where {X}
-    xnew = set(value(x), Lens!!(lens), rand(cfg.rng, d))
-    ctx′ = merge(ctx, NamedTuple{(X,)}((xnew,)))
+    proj = cfg.proj
+    joint = rand(cfg.rng, jointof(d))
+    d = setproj(d, proj)
+    latent, retn = joint
+    xnew = set(value(x), Lens!!(lens), retn)
+    @show xnew
+    ctx′ = merge(ctx, NamedTuple{(X,)}((proj(joint),)))
+    @show ctx′
     (xnew, ctx′)
 end
 

@@ -59,8 +59,10 @@ include("examples-list.jl")
             y ~ Bernoulli(p)
             return y
         end
-            
-        mean(predict(m(), [(p=p,) for p in rand(10000)])) isa Float64
+        
+        @test predict(m(), (p=rand(),)) isa Bool
+
+        # @test mean(predict(m(), [(p=p,) for p in rand(10000)])) isa AbstractFloat
     end
 
     @testset "https://github.com/cscherrer/Soss.jl/issues/258" begin
