@@ -69,12 +69,11 @@ end
     m::ModelClosure;
     ctx = NamedTuple(),
 ) where {T_rng}
-    proj = getproj(m)
-    retfun(r, ctx) = r
-    # retfun(r, ctx) = proj(ctx => r)
-    cfg = (rng = rng, T_rng = T_rng, proj = proj )
-    gg_call(rand, m, NamedTuple(), cfg, ctx, retfun)
+    println(@__FILE__,":", @__LINE__)
+    retfun(p, ctx) = (@show ctx; @show p; ctx)
+    _rand(rng, T_rng, m; retfun=retfun, ctx)
 end
+
 
 function Base.rand(
     ::AbstractRNG,
@@ -86,6 +85,34 @@ function Base.rand(
     @error "`rand` called on Model without arugments. Try `m(args)` or `m()` if the model has no arguments"
 end
 
+function Base.rand(
+    ::AbstractRNG,
+    ::Type,
+    m::ModelPosterior,
+    args...;
+    kwargs...
+)
+    @error "`rand` called on ModelPosterior. `rand` does not allow conditioning; try `predict`"
+end
+
+_rand(rng, ::Type{T_rng}, m; kwargs...) where {T_rng} = rand(rng, T_rng, m)
+
+@inline function _rand(
+    rng::AbstractRNG,
+    ::Type{T_rng},
+    m::ModelClosure;
+    retfun = (p, ctx) -> (@show ctx; @show p; p),
+    ctx
+) where {T_rng}
+println(@__FILE__,":", @__LINE__)
+    proj = getproj(m)
+    # retfun(r, ctx) = (@show ctx; @show r; r)
+    # retfun(r, ctx) = proj(ctx => r)
+    cfg = (rng = rng, T_rng = T_rng, proj = proj )
+    gg_call(rand, m, NamedTuple(), cfg, ctx, retfun)
+end
+
+
 ###############################################################################
 # ctx::NamedTuple
 @inline function tilde(
@@ -96,15 +123,14 @@ end
     cfg,
     ctx::NamedTuple,
 ) where {X}
+println(@__FILE__,":", @__LINE__)
     proj = cfg.proj
-    joint = rand(cfg.rng, d)
-    d = setproj(d, proj)
+    println("Calling `_rand`")
+    joint = _rand(cfg.rng, cfg.T_rng, jointof(d); ctx)
+    println("`_rand` done")
     latent, retn = joint
     ctx′ = merge(ctx, NamedTuple{(X,)}((proj(joint),)))
-    @show ctx′
     xnew = set(value(x), Lens!!(lens), retn)
-    @show xnew
-    println()
     (xnew, ctx′)
 end
 

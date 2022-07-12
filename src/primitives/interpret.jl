@@ -53,7 +53,7 @@ function make_body(M, f, ast::Expr, proj, retfun, argsT, obsT, parsT, paramnames
                         :($Unobserved{$qx}(missing))
                     end)
                 end
-                st = :(($x, _ctx) = $tilde($f, $obj, $l, jointof($rhs), _cfg, _ctx))
+                st = :(($x, _ctx) = $tilde($f, $obj, $l, $rhs, _cfg, _ctx))
                 # qst = QuoteNode(st)
                 q = quote
                     # println($qst)
