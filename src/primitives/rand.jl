@@ -68,9 +68,11 @@ end
     ::Type{T_rng},
     m::ModelClosure;
     ctx = NamedTuple(),
-    retfun = (r, ctx) -> r,
 ) where {T_rng}
-    cfg = (rng = rng, T_rng = T_rng, proj = getproj(m) )
+    proj = getproj(m)
+    retfun(r, ctx) = r
+    # retfun(r, ctx) = proj(ctx => r)
+    cfg = (rng = rng, T_rng = T_rng, proj = proj )
     gg_call(rand, m, NamedTuple(), cfg, ctx, retfun)
 end
 
@@ -95,13 +97,14 @@ end
     ctx::NamedTuple,
 ) where {X}
     proj = cfg.proj
-    joint = rand(cfg.rng, jointof(d))
+    joint = rand(cfg.rng, d)
     d = setproj(d, proj)
     latent, retn = joint
-    xnew = set(value(x), Lens!!(lens), retn)
-    @show xnew
     ctx′ = merge(ctx, NamedTuple{(X,)}((proj(joint),)))
     @show ctx′
+    xnew = set(value(x), Lens!!(lens), retn)
+    @show xnew
+    println()
     (xnew, ctx′)
 end
 
