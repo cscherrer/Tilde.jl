@@ -66,11 +66,12 @@ end
 @inline function Base.rand(
     rng::AbstractRNG,
     ::Type{T_rng},
-    m::ModelClosure;
-    ctx = NamedTuple(),
+    m::ModelClosure
 ) where {T_rng}
     retfun(proj, joint, ctx) = proj(ctx => last(joint))
-    _rand(rng, T_rng, m; retfun=retfun, ctx)
+    cfg = (rng = rng, T_rng = T_rng, retfun=retfun, proj = getproj(m))
+    ctx = NamedTuple()
+    _rand(rng, T_rng, m; cfg=cfg, ctx=ctx)
 end
 
 
@@ -100,13 +101,13 @@ _rand(rng, ::Type{T_rng}, m; kwargs...) where {T_rng} = rand(rng, T_rng, m)
     rng::AbstractRNG,
     ::Type{T_rng},
     m::ModelClosure;
-    retfun = (proj, joint, ctx) -> proj(ctx => last(joint)),
+    cfg,
     ctx
 ) where {T_rng}
-    proj = getproj(m)
+    retfun = cfg.retfun
+    proj = cfg.proj
     # retfun(r, ctx) = (@show ctx; @show r; r)
     # retfun(r, ctx) = proj(ctx => r)
-    cfg = (rng = rng, T_rng = T_rng, proj = proj )
     gg_call(rand, m, NamedTuple(), cfg, ctx, retfun)
 end
 
@@ -122,7 +123,7 @@ end
     ctx::NamedTuple,
 ) where {X}
     proj = cfg.proj
-    joint = _rand(cfg.rng, cfg.T_rng, jointof(d); ctx)
+    joint = _rand(cfg.rng, cfg.T_rng, jointof(d); cfg, ctx)
     latent, retn = joint
     ctx′ = merge(ctx, NamedTuple{(X,)}((proj(joint),)))
     xnew = set(value(x), Lens!!(lens), retn)
