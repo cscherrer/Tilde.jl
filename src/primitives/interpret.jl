@@ -65,7 +65,7 @@ function make_body(M, f, ast::Expr, proj, retfun, argsT, obsT, parsT, paramnames
             end
 
             :(return $r) => quote
-                    return $retfun($proj(NamedTuple{$paramnames}($paramvals) => $r), _ctx)
+                    return $retfun($proj, NamedTuple{$paramnames}($paramvals) => $r, _ctx)
                 end
 
             Expr(:scoped, new_scope, ex) => begin
@@ -127,7 +127,7 @@ end
             $body
             # If body doesn't have a return, default to `return ctx`
             _params = NamedTuple{$paramnames}($paramvals)
-            return $_retfun($_proj(_params => _params), _ctx)
+            return $_retfun($_proj, _params => _params, _ctx)
         end
     )
 

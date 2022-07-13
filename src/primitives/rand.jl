@@ -69,8 +69,7 @@ end
     m::ModelClosure;
     ctx = NamedTuple(),
 ) where {T_rng}
-    println(@__FILE__,":", @__LINE__)
-    retfun(p, ctx) = (@show ctx; @show p; ctx)
+    retfun(proj, joint, ctx) = proj(ctx => last(joint))
     _rand(rng, T_rng, m; retfun=retfun, ctx)
 end
 
@@ -101,10 +100,9 @@ _rand(rng, ::Type{T_rng}, m; kwargs...) where {T_rng} = rand(rng, T_rng, m)
     rng::AbstractRNG,
     ::Type{T_rng},
     m::ModelClosure;
-    retfun = (p, ctx) -> (@show ctx; @show p; p),
+    retfun = (proj, joint, ctx) -> proj(ctx => last(joint)),
     ctx
 ) where {T_rng}
-println(@__FILE__,":", @__LINE__)
     proj = getproj(m)
     # retfun(r, ctx) = (@show ctx; @show r; r)
     # retfun(r, ctx) = proj(ctx => r)
@@ -123,11 +121,8 @@ end
     cfg,
     ctx::NamedTuple,
 ) where {X}
-println(@__FILE__,":", @__LINE__)
     proj = cfg.proj
-    println("Calling `_rand`")
     joint = _rand(cfg.rng, cfg.T_rng, jointof(d); ctx)
-    println("`_rand` done")
     latent, retn = joint
     ctx′ = merge(ctx, NamedTuple{(X,)}((proj(joint),)))
     xnew = set(value(x), Lens!!(lens), retn)
