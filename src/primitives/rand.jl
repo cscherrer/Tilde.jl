@@ -69,7 +69,8 @@ end
     m::ModelClosure
 ) where {T_rng}
     retfun(proj, joint, ctx) = proj(ctx => last(joint))
-    cfg = (rng = rng, T_rng = T_rng, retfun=retfun, proj = getproj(m))
+    proj = getproj(m)
+    cfg = (rng = rng, T_rng = T_rng, retfun=retfun, proj = proj)
     ctx = NamedTuple()
     _rand(rng, T_rng, m; cfg=cfg, ctx=ctx)
 end
