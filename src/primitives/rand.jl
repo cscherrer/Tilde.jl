@@ -96,7 +96,7 @@ function Base.rand(
     @error "`rand` called on ModelPosterior. `rand` does not allow conditioning; try `predict`"
 end
 
-_rand(rng, ::Type{T_rng}, m; kwargs...) where {T_rng} = rand(rng, T_rng, m)
+@inline _rand(rng, ::Type{T_rng}, m; kwargs...) where {T_rng} = rand(rng, T_rng, m)
 
 @inline function _rand(
     rng::AbstractRNG,
