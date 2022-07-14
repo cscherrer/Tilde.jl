@@ -98,7 +98,7 @@ end
     ::F,
     _mc::MC,
     _pars::NamedTuple{N,T},
-    _cfg,
+    _cfgraw,
     _ctx,
 ) where {F,MC,N,T}
     _m = type2model(MC)
@@ -117,11 +117,10 @@ end
     body = make_body(M, f, body, _proj, argsT, obsT, parsT, paramnames)
 
     q = MacroTools.flatten(
-        @q @inline function (_mc, _cfg, _ctx, _pars)
-            local _retn
+        @q function (f, _mc, _cfgraw, _ctx, _pars)
             _args = $argvals(_mc)
             _obs = $observations(_mc)
-            _cfg = merge(_cfg, (args = _args, obs = _obs, pars = _pars))
+            _cfg = merge(_cfgraw, (args = _args, obs = _obs, pars = _pars))
             $body
             # If body doesn't have a return, default to `return ctx`
             _params = NamedTuple{$paramnames}($paramvals)
