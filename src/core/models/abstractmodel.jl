@@ -19,8 +19,18 @@ abstract type AbstractModel{A,B,M,P} <: AbstractTransitionKernel end
 
 abstract type AbstractConditionalModel{M,Args,Obs,P} <: AbstractMeasure end
 
+# getproj(::Type{T}) where {T} = Base.Fix1(project_joint, T)
 getproj(::Type{<:AbstractConditionalModel{M,Args,Obs,P}}) where {M,Args,Obs,P} = MeasureBase.instance(P)
+
 getproj(::M) where {M<:AbstractConditionalModel} = getproj(M) 
+
+# project_joint(::Type{<:AbstractConditionalModel{M,A,O,typeof(first)}}, p) where {M,A,O} = first(p)
+# project_joint(::Type{<:AbstractConditionalModel{M,A,O,typeof(last)}}, p) where {M,A,O} = last(p)
+# project_joint(::Type{<:AbstractConditionalModel{M,A,O,typeof(identity)}}, p) where {M,A,O} = p
+
+# project_joint(::AbstractConditionalModel{M,A,O,typeof(first)}, p) where {M,A,O} = first(p)
+# project_joint(::AbstractConditionalModel{M,A,O,typeof(last)}, p) where {M,A,O} = last(p)
+# project_joint(::AbstractConditionalModel{M,A,O,typeof(identity)}, p) where {M,A,O} = p
 
 argstype(::AbstractModel{A,B,M}) where {A,B,M} = A
 

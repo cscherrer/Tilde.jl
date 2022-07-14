@@ -111,7 +111,7 @@ end
     proj = cfg.proj
     # retfun(r, ctx) = (@show ctx; @show r; r)
     # retfun(r, ctx) = proj(ctx => r)
-    gg_call(rand, m, NamedTuple(), cfg, ctx, retfun)
+    gg_call(rand, m, NamedTuple(), cfg, NamedTuple(), retfun)
 end
 
 
