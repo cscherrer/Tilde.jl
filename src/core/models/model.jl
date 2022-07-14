@@ -72,18 +72,18 @@ toargs(vs::Vector{Symbol}) = Tuple(vs)
 toargs(vs::NTuple{N,Symbol} where {N}) = vs
 
 macro model(vs::Expr, expr::Expr)
-    theModule = __module__
     @assert vs.head == :tuple
     @assert expr.head == :block
-    Model(theModule, Vector{Symbol}(vs.args), expr)
+    ex = macroexpand(__module__, expr)
+    Model(__module__, Vector{Symbol}(vs.args), ex)
 end
 
 macro model(v::Symbol, expr::Expr)
-    theModule = __module__
-    Model(theModule, [v], expr)
+    ex = macroexpand(__module__, expr)
+    Model(__module__, [v], ex)
 end
 
 macro model(expr::Expr)
-    theModule = __module__
-    Model(theModule, Vector{Symbol}(), expr)
+    ex = macroexpand(__module__, expr)
+    Model(__module__, Vector{Symbol}(), ex)
 end
