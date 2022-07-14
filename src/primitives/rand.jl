@@ -58,7 +58,7 @@ end
 @inline Base.rand(d::ModelClosure, N::Int) = rand(GLOBAL_RNG, d, N)
 
 @inline function Base.rand(m::ModelClosure; kwargs...)
-    rand(GLOBAL_RNG, m; kwargs...)
+    rand(GLOBAL_RNG, Float64, m; kwargs...)
 end
 
 @inline Base.rand(rng::AbstractRNG, m::ModelClosure) = rand(rng, Float64, m)
@@ -68,11 +68,13 @@ end
     ::Type{T_rng},
     m::ModelClosure
 ) where {T_rng}
-    retfun(proj, joint, ctx) = proj(ctx => last(joint))
+    @inline retfun(proj, joint, ctx) = proj(ctx => last(joint))
     proj = getproj(m)
     cfg = (rng = rng, T_rng = T_rng, retfun=retfun, proj = proj)
     ctx = NamedTuple()
-    _rand(rng, T_rng, m; cfg=cfg, ctx=ctx)
+    joint = _rand(rng, T_rng, jointof(m); cfg=cfg, ctx=ctx)
+    latent, retn = joint
+    proj(joint)
 end
 
 
