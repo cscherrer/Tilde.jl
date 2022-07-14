@@ -100,7 +100,7 @@ end
     _pars::NamedTuple{N,T},
     _cfg,
     _ctx,
-) where {F,MC,N,T,R}
+) where {F,MC,N,T}
     _m = type2model(MC)
     M = getmodule(_m)
 
