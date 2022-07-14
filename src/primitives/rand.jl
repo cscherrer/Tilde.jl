@@ -63,7 +63,7 @@ end
 
 @inline Base.rand(rng::AbstractRNG, m::ModelClosure) = rand(rng, Float64, m)
 
-retfun(rand, proj, joint, ctx) = proj(ctx => last(joint))
+@inline retfun(rand, proj, joint, ctx) = proj(ctx => last(joint))
 
 @inline function Base.rand(
     rng::AbstractRNG,
@@ -72,7 +72,7 @@ retfun(rand, proj, joint, ctx) = proj(ctx => last(joint))
 ) where {T_rng}
     proj = getproj(m)
     cfg = (rng = rng, T_rng = T_rng, proj = proj)
-    _rand(rng, T_rng, m; cfg=cfg)
+    _rand(rng, T_rng, m, cfg)
     # latent, retn = joint
     # proj(joint)
 end
@@ -98,15 +98,14 @@ function Base.rand(
     @error "`rand` called on ModelPosterior. `rand` does not allow conditioning; try `predict`"
 end
 
-@inline _rand(rng, ::Type{T_rng}, m; kwargs...) where {T_rng} = rand(rng, T_rng, m)
+@inline _rand(rng, ::Type{T_rng}, m, cfg) where {T_rng} = rand(rng, T_rng, m)
 
 @inline function _rand(
     rng::AbstractRNG,
     ::Type{T_rng},
-    m::ModelClosure;
+    m::ModelClosure,
     cfg,
 ) where {T_rng}
-    proj = cfg.proj
     gg_call(rand, m, NamedTuple(), cfg, NamedTuple())
 end
 
@@ -122,11 +121,16 @@ end
     ctx::NamedTuple,
 ) where {X}
     proj = cfg.proj
-    joint = _rand(cfg.rng, cfg.T_rng, jointof(d); cfg)
+    joint = _rand(cfg.rng, cfg.T_rng, jointof(d), cfg)
     latent, retn = joint
-    ctx′ = merge(ctx, NamedTuple{(X,)}((proj(joint),)))
+    ctx′ = rand_merge(ctx, x, proj, joint) 
+    # ctx′ = merge(ctx, NamedTuple{(X,)}((proj(joint),)))
     xnew = set(value(x), Lens!!(lens), retn)
     (xnew, ctx′)
+end
+
+function rand_merge(ctx, ::Unobserved{X}, proj, joint) where {X}
+    merge(ctx, NamedTuple{(X,)}((proj(joint),)))
 end
 
 # @inline function tilde(
