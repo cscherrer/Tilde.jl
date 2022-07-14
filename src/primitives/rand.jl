@@ -63,18 +63,19 @@ end
 
 @inline Base.rand(rng::AbstractRNG, m::ModelClosure) = rand(rng, Float64, m)
 
+retfun(rand, proj, joint, ctx) = proj(ctx => last(joint))
+
 @inline function Base.rand(
     rng::AbstractRNG,
     ::Type{T_rng},
     m::ModelClosure
 ) where {T_rng}
-    @inline retfun(proj, joint, ctx) = proj(ctx => last(joint))
     proj = getproj(m)
-    cfg = (rng = rng, T_rng = T_rng, retfun=retfun, proj = proj)
+    cfg = (rng = rng, T_rng = T_rng, proj = proj)
     ctx = NamedTuple()
-    joint = _rand(rng, T_rng, jointof(m); cfg=cfg, ctx=ctx)
-    latent, retn = joint
-    proj(joint)
+    joint = _rand(rng, T_rng, m; cfg=cfg, ctx=ctx)
+    # latent, retn = joint
+    # proj(joint)
 end
 
 
@@ -107,11 +108,8 @@ end
     cfg,
     ctx
 ) where {T_rng}
-    retfun = cfg.retfun
     proj = cfg.proj
-    # retfun(r, ctx) = (@show ctx; @show r; r)
-    # retfun(r, ctx) = proj(ctx => r)
-    gg_call(rand, m, NamedTuple(), cfg, NamedTuple(), retfun)
+    gg_call(rand, m, NamedTuple(), cfg, NamedTuple())
 end
 
 
