@@ -72,8 +72,7 @@ retfun(rand, proj, joint, ctx) = proj(ctx => last(joint))
 ) where {T_rng}
     proj = getproj(m)
     cfg = (rng = rng, T_rng = T_rng, proj = proj)
-    ctx = NamedTuple()
-    joint = _rand(rng, T_rng, m; cfg=cfg, ctx=ctx)
+    _rand(rng, T_rng, m; cfg=cfg)
     # latent, retn = joint
     # proj(joint)
 end
@@ -106,7 +105,6 @@ end
     ::Type{T_rng},
     m::ModelClosure;
     cfg,
-    ctx
 ) where {T_rng}
     proj = cfg.proj
     gg_call(rand, m, NamedTuple(), cfg, NamedTuple())
@@ -124,7 +122,7 @@ end
     ctx::NamedTuple,
 ) where {X}
     proj = cfg.proj
-    joint = _rand(cfg.rng, cfg.T_rng, jointof(d); cfg, ctx)
+    joint = _rand(cfg.rng, cfg.T_rng, jointof(d); cfg)
     latent, retn = joint
     ctx′ = merge(ctx, NamedTuple{(X,)}((proj(joint),)))
     xnew = set(value(x), Lens!!(lens), retn)
