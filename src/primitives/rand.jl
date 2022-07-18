@@ -137,17 +137,6 @@ end
     mymerge(ctx, NamedTuple{(X,)}((proj(joint),)))
 end
 
-@generated function mymerge(a::NamedTuple{an}, b::NamedTuple{bn}) where {an, bn}
-    names = Base.merge_names(an, bn)
-    types = Base.merge_types(names, a, b)
-    vals = Any[ :(getfield($(Base.sym_in(names[n], bn) ? :b : :a), $(QuoteNode(names[n])))) for n in 1:length(names) ]
-    quote
-        # $(Expr(:meta, :inline))
-        NamedTuple{$names,$types}(($(vals...),))::NamedTuple{$names,$types}
-    end
-end
-
-
 
 # @inline function tilde(
 #     ::typeof(Base.rand),
