@@ -94,11 +94,17 @@ end
 #     error(ex)
 # end
 
+struct KnownVars{A,O,P}
+    args::A
+    obs::O
+    pars::P
+end
+
 @generated function gg_call(
     ::F,
     _mc::MC,
     _pars::NamedTuple{N,T},
-    _cfgraw,
+    _cfg,
     _ctx,
 ) where {F,MC,N,T}
     _m = type2model(MC)
@@ -117,10 +123,10 @@ end
     body = make_body(M, f, body, _proj, argsT, obsT, parsT, paramnames)
 
     q = MacroTools.flatten(
-        @q function (f, _mc, _cfgraw, _ctx, _pars)
+        @q function (f, _mc, _cfg, _ctx, _pars)
             _args = $argvals(_mc)
             _obs = $observations(_mc)
-            _cfg = merge(_cfgraw, (args = _args, obs = _obs, pars = _pars))
+            # _vars = KnownVars(_args, _obs, _pars)
             $body
             # If body doesn't have a return, default to `return ctx`
             _params = NamedTuple{$paramnames}($paramvals)

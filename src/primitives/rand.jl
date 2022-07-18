@@ -1,6 +1,15 @@
 using Random: GLOBAL_RNG
 using TupleVectors: chainvec
 
+struct RandConfig{T_rng, RNG, P} <: AbstractTildeConfig
+    rng::RNG
+    proj::P
+
+    RandConfig(::Type{T_rng}, rng::RNG, proj::P) where {T_rng, RNG, P} = new{T_rng,RNG,P}(rng,proj)
+end
+
+RandConfig(rng,proj) = RandConfig(Float64, rng,proj)
+
 export rand
 EmptyNTtype = NamedTuple{(),Tuple{}} where {T<:Tuple}
 
@@ -72,9 +81,8 @@ end
     ::Type{T_rng},
     m::ModelClosure
 ) where {T_rng}
-    proj = getproj(m)
-    cfg = (rng = rng, T_rng = T_rng, proj = proj)
-    _rand(rng, T_rng, m, proj)
+    cfg = RandConfig(T_rng, getproj(m), rng)
+    _rand(cfg, m)
     # latent, retn = joint
     # proj(joint)
 end
@@ -100,15 +108,13 @@ function Base.rand(
     @error "`rand` called on ModelPosterior. `rand` does not allow conditioning; try `predict`"
 end
 
-@inline _rand(rng, ::Type{T_rng}, m, proj::P) where {T_rng,P} = rand(rng, T_rng, m)
+@inline _rand(cfg::RandConfig{T_rng}, m) where {T_rng} = rand(cfg.rng, T_rng, m)
 
 @inline function _rand(
-    rng::AbstractRNG,
-    ::Type{T_rng},
+    cfg::RandConfig{T_rng, RNG,P},
     m::ModelClosure,
-    proj::P,
-) where {T_rng,P}
-    gg_call(rand, m, NamedTuple(), (;rng, T_rng, proj), NamedTuple())
+) where {T_rng,RNG,P}
+    gg_call(rand, m, NamedTuple(), cfg, NamedTuple())
 end
 
 
@@ -119,11 +125,11 @@ end
     x::Unobserved{X},
     lens,
     d,
-    cfg,
+    cfg::RandConfig{T_rng},
     ctx::NamedTuple,
-) where {X}
+) where {T_rng,X}
     proj = cfg.proj
-    joint = _rand(cfg.rng, cfg.T_rng, jointof(d), proj)
+    joint = _rand(cfg, jointof(d))
     latent = first(joint)
     retn = last(joint)
     # latent, retn = joint
