@@ -25,52 +25,48 @@ end
     rand(GLOBAL_RNG, T_rng, m, args...; kwargs...)
 end
 
-@inline function Base.rand(m::ModelClosure, d::Integer, dims::Integer...; kwargs...)
-    rand(GLOBAL_RNG, Float64, m, d, dims...; kwargs...)
+@inline function Base.rand(m::ModelClosure, N::Integer; kwargs...)
+    rand(GLOBAL_RNG, Float64, m, N; kwargs...)
 end
 
 @inline function Base.rand(
     rng::AbstractRNG,
-    m::ModelClosure,
-    d::Integer,
-    dims::Integer...;
+    mc::ModelClosure,
+    N::Integer,
     kwargs...,
 )
-    rand(rng, Float64, m, d, dims...; kwargs...)
+    rand(rng, Float64, mc, N; kwargs...)
 end
 
 @inline function Base.rand(
     ::Type{T_rng},
-    m::ModelClosure,
-    d::Integer,
-    dims::Integer...;
+    mc::ModelClosure,
+    N;
     kwargs...,
 ) where {T_rng}
-    rand(GLOBAL_RNG, T_rng, m, d, dims...; kwargs...)
+    rand(GLOBAL_RNG, T_rng, mc, N; kwargs...)
 end
 
 @inline function Base.rand(
     rng::AbstractRNG,
     ::Type{T_rng},
-    d::ModelClosure,
+    mc::ModelClosure,
     N::Integer,
-    v::Vararg{Integer},
 ) where {T_rng}
-    @assert isempty(v)
-    r = chainvec(rand(rng, T_rng, d), N)
+    r = chainvec(rand(rng, T_rng, mc), N)
     for j in 2:N
-        @inbounds r[j] = rand(rng, T_rng, d)
+        @inbounds r[j] = rand(rng, T_rng, mc)
     end
     return r
 end
 
-@inline Base.rand(d::ModelClosure, N::Int) = rand(GLOBAL_RNG, d, N)
+@inline Base.rand(mc::ModelClosure, N::Int) = rand(GLOBAL_RNG, mc, N)
 
-@inline function Base.rand(m::ModelClosure; kwargs...)
-    rand(GLOBAL_RNG, Float64, m; kwargs...)
+@inline function Base.rand(mc::ModelClosure; kwargs...)
+    rand(GLOBAL_RNG, Float64, mc; kwargs...)
 end
 
-@inline Base.rand(rng::AbstractRNG, m::ModelClosure) = rand(rng, Float64, m)
+@inline Base.rand(rng::AbstractRNG, mc::ModelClosure) = rand(rng, Float64, mc)
 
 @inline function retfun(::RandConfig, proj::P, joint::Pair{X,Y}, ctx::NamedTuple{N,T}) where {P,X,Y,N,T}
     proj(ctx => last(joint))
