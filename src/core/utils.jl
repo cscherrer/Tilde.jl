@@ -345,3 +345,31 @@ narrow_array(x) = collect(Base.Generator(identity, x))
 function parse_optic(ex)
     unescape.(Accessors.parse_obj_optic(ex))
 end
+
+Base.@pure function merge_names(an::Tuple{Vararg{Symbol}}, bn::Tuple{Vararg{Symbol}})
+    @nospecialize an bn
+    names = Symbol[an...]
+    for n in bn
+        if !sym_in(n, an)
+            push!(names, n)
+        end
+    end
+    (names...,)
+end
+
+Base.@pure function merge_types(names::Tuple{Vararg{Symbol}}, a::Type{<:NamedTuple}, b::Type{<:NamedTuple})
+    @nospecialize names a b
+    bn = _nt_names(b)
+    return Tuple{Any[ fieldtype(sym_in(names[n], bn) ? b : a, names[n]) for n in 1:length(names) ]...}
+end
+
+
+@generated function mymerge(a::NamedTuple{an}, b::NamedTuple{bn}) where {an, bn}
+    names = Base.merge_names(an, bn)
+    types = Base.merge_types(names, a, b)
+    vals = Any[ :(getfield($(Base.sym_in(names[n], bn) ? :b : :a), $(QuoteNode(names[n])))) for n in 1:length(names) ]
+    quote
+        # $(Expr(:meta, :inline))
+        NamedTuple{$names,$types}(($(vals...),))::NamedTuple{$names,$types}
+    end
+end
