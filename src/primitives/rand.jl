@@ -128,24 +128,7 @@ end
     latent = first(joint)
     retn = last(joint)
     # latent, retn = joint
-    ctx′ = rand_merge(ctx, x, proj, joint) 
-    # ctx′ = merge(ctx, NamedTuple{(X,)}((proj(joint),)))
+    ctx′ = mymerge(ctx, NamedTuple{(X,)}((proj(joint),)))
     xnew = set(value(x), Lens!!(lens), retn)
     (xnew, ctx′)
 end
-
-@inline function rand_merge(ctx, ::Unobserved{X}, proj::P, joint) where {X,P}
-    mymerge(ctx, NamedTuple{(X,)}((proj(joint),)))
-end
-
-
-# @inline function tilde(
-#     ::typeof(Base.rand),
-#     x::Observed{X},
-#     lens,
-#     d,
-#     cfg,
-#     ctx::NamedTuple,
-# ) where {X}
-#     (value(x), ctx, nothing)
-# end
