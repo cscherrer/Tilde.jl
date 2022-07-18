@@ -5,7 +5,7 @@ struct RandConfig{T_rng, RNG, P} <: AbstractTildeConfig
     rng::RNG
     proj::P
 
-    RandConfig(::Type{T_rng}, rng::RNG, proj::P) where {T_rng, RNG, P} = new{T_rng,RNG,P}(rng,proj)
+    RandConfig(::Type{T_rng}, rng::RNG, proj::P) where {T_rng, RNG<:AbstractRNG, P} = new{T_rng,RNG,P}(rng,proj)
 end
 
 RandConfig(rng,proj) = RandConfig(Float64, rng,proj)
@@ -72,7 +72,7 @@ end
 
 @inline Base.rand(rng::AbstractRNG, m::ModelClosure) = rand(rng, Float64, m)
 
-@inline function retfun(::typeof(rand), proj::P, joint::Pair{X,Y}, ctx::NamedTuple{N,T}) where {P,X,Y,N,T}
+@inline function retfun(::RandConfig, proj::P, joint::Pair{X,Y}, ctx::NamedTuple{N,T}) where {P,X,Y,N,T}
     proj(ctx => last(joint))
 end
 
@@ -81,7 +81,7 @@ end
     ::Type{T_rng},
     m::ModelClosure
 ) where {T_rng}
-    cfg = RandConfig(T_rng, getproj(m), rng)
+    cfg = RandConfig(T_rng, rng, getproj(m))
     _rand(cfg, m)
     # latent, retn = joint
     # proj(joint)
@@ -121,11 +121,10 @@ end
 ###############################################################################
 # ctx::NamedTuple
 @inline function tilde(
-    ::typeof(Base.rand),
+    cfg::RandConfig{T_rng},
     x::Unobserved{X},
     lens,
     d,
-    cfg::RandConfig{T_rng},
     ctx::NamedTuple,
 ) where {T_rng,X}
     proj = cfg.proj

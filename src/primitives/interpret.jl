@@ -53,7 +53,7 @@ function make_body(M, f, ast::Expr, proj, argsT, obsT, parsT, paramnames)
                         :($Unobserved{$qx}(missing))
                     end)
                 end
-                st = :(($x, _ctx) = $tilde($f, $obj, $l, $rhs, _cfg, _ctx))
+                st = :(($x, _ctx) = $tilde(_cfg, $obj, $l, $rhs, _ctx))
                 # qst = QuoteNode(st)
                 q = quote
                     # println($qst)
@@ -65,7 +65,7 @@ function make_body(M, f, ast::Expr, proj, argsT, obsT, parsT, paramnames)
             end
 
             :(return $r) => quote
-                    return Tilde.retfun($f, $proj, NamedTuple{$paramnames}($paramvals) => $r, _ctx)
+                    return Tilde.retfun(_cfg, $proj, NamedTuple{$paramnames}($paramvals) => $r, _ctx)
                 end
 
             Expr(:scoped, new_scope, ex) => begin
@@ -130,7 +130,7 @@ end
             $body
             # If body doesn't have a return, default to `return ctx`
             _params = NamedTuple{$paramnames}($paramvals)
-            return Tilde.retfun($f, $_proj, _params => _params, _ctx)
+            return Tilde.retfun(_cfg, $_proj, _params => _params, _ctx)
         end
     )
 
