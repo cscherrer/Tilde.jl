@@ -5,20 +5,25 @@ import MeasureTheory
 
 using Accessors
 
+struct LogdensityConfig{F} <: AbstractTildeConfig
+    f::F
+end
+
+@inline retfun(cfg::LogdensityConfig{typeof(logdensityof)}, r, ctx) = ctx.ℓ
+@inline retfun(cfg::LogdensityConfig{typeof(unsafe_logdensityof)}, r, ctx) = ctx.ℓ
+
+
 @inline function MeasureBase.logdensityof(
     cm::AbstractConditionalModel{M,A,O,typeof(first)},
     pars::NamedTuple;
-    cfg = NamedTuple(),
-    ctx = NamedTuple(),
-    retfun = (r, ctx) -> ctx.ℓ,
 ) where {M,A,O}
     # cfg = merge(cfg, (pars=pars,))
-    ctx = merge(ctx, (ℓ = 0.0,))
-    runmodel(logdensityof, cm, pars, cfg, ctx, retfun)
+    cfg = LogdensityConfig(logdensityof)
+    runmodel(cfg, cm, pars, (ℓ=0.0,))
 end
 
 @inline function tilde(
-    cfg::LogdensityofConfig,
+    cfg::LogdensityConfig{typeof(logdensityof)},
     x::MaybeObserved{X},
     lens,
     d,
@@ -33,21 +38,16 @@ end
 @inline function MeasureBase.unsafe_logdensityof(
     cm::AbstractConditionalModel{M,A,O,typeof(first)},
     pars::NamedTuple;
-    cfg = NamedTuple(),
-    ctx = NamedTuple(),
-    retfun = (r, ctx) -> ctx.ℓ,
 ) where {M,A,O}
-    # cfg = merge(cfg, (pars=pars,))
-    ctx = merge(ctx, (ℓ = 0.0,))
-    runmodel(unsafe_logdensityof, cm, pars, cfg, ctx, retfun)
+    cfg = LogdensityConfig(unsafe_logdensityof)
+    runmodel(cfg, cm, pars, (ℓ = 0.0,))
 end
 
 @inline function tilde(
-    ::typeof(unsafe_logdensityof),
+    cfg::LogdensityConfig{typeof(unsafe_logdensityof)},
     x::MaybeObserved{X},
     lens,
     d,
-    cfg,
     ctx::NamedTuple,
 ) where {X}
     x = value(x)

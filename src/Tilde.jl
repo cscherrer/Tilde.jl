@@ -95,7 +95,7 @@ include("core/models/posterior.jl")
 include("distributions/iid.jl")
 
 include("primitives/rand.jl")
-# include("primitives/logdensity.jl")
+include("primitives/logdensity.jl")
 # include("primitives/logdensity_rel.jl")
 # include("primitives/insupport.jl")
 
