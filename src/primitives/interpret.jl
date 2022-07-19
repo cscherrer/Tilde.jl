@@ -65,7 +65,7 @@ function make_body(M, ast::Expr, proj, argsT, obsT, parsT, paramnames)
             end
 
             :(return $r) => quote
-                    return Tilde.retfun(_cfg, $proj, NamedTuple{$paramnames}($paramvals) => $r, _ctx)
+                    return Tilde.retfun(_cfg, NamedTuple{$paramnames}($paramvals) => $r, _ctx)
                 end
 
             Expr(:scoped, new_scope, ex) => begin
@@ -128,7 +128,7 @@ end
             $body
             # If body doesn't have a return, default to `return ctx`
             _params = NamedTuple{$paramnames}($paramvals)
-            return Tilde.retfun(_cfg, $_proj, _params => _params, _ctx)
+            return Tilde.retfun(_cfg, _params => _params, _ctx)
         end
     )
 
