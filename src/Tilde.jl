@@ -82,6 +82,7 @@ include("callify.jl")
 end
 
 include("config.jl")
+include("lensvars.jl")
 include("optics.jl")
 include("maybe.jl")
 include("core/models/abstractmodel.jl")
