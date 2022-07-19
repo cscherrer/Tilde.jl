@@ -106,7 +106,7 @@ include("primitives/logdensity.jl")
 # include("primitives/basemeasure.jl")
 # include("primitives/predict.jl")
 # include("primitives/dag.jl")
-include("primitives/interpret.jl")
+include("primitives/runmodel.jl")
 
 include("transforms/utils.jl")
 

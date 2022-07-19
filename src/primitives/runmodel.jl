@@ -1,12 +1,7 @@
-export interpret
+export runmodel
 
 @inline function inkeys(::StaticSymbol{s}, ::Type{NamedTuple{N,T}}) where {s,N,T}
     return s ∈ N
-end
-
-function interpret(m::Model{A,B,M}, tilde, ctx0) where {A,B,M}
-    theModule = getmodule(m)
-    mk_function(theModule, make_body(theModule, m.body, tilde, ctx0))
 end
 
 function make_body(M, f, m::AbstractModel)
