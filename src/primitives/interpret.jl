@@ -15,7 +15,7 @@ end
 
 call(f, g, args...; kwargs...) = g(args...; kwargs...)
 
-function make_body(M, f, ast::Expr, proj, argsT, obsT, parsT, paramnames)
+function make_body(M, ast::Expr, proj, argsT, obsT, parsT, paramnames)
     paramvals = Expr(:tuple, paramnames...) 
     knownvars = union(keys.(schema.((argsT, obsT, parsT)))...)
     function go(ex, scope = (bounds = Var[], freevars = Var[], bound_inits = Symbol[]))
@@ -101,12 +101,11 @@ struct KnownVars{A,O,P}
 end
 
 @generated function gg_call(
-    ::F,
+    _cfg,
     _mc::MC,
     _pars::NamedTuple{N,T},
-    _cfg,
     _ctx,
-) where {F,MC,N,T}
+) where {MC,N,T}
     _m = type2model(MC)
     M = getmodule(_m)
 
@@ -116,11 +115,10 @@ end
 
     body = _m.body |> loadvals(argsT, obsT, parsT)
 
-    f = MeasureBase.instance(F)
     paramnames = tuple(parameters(_m)...)
     paramvals = Expr(:tuple, paramnames...) 
     _proj = getproj(MC)
-    body = make_body(M, f, body, _proj, argsT, obsT, parsT, paramnames)
+    body = make_body(M, body, _proj, argsT, obsT, parsT, paramnames)
 
     q = MacroTools.flatten(
         @q function (_mc, _cfg, _ctx, _pars)
