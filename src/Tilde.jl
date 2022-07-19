@@ -99,7 +99,7 @@ include("primitives/logdensity.jl")
 # include("primitives/logdensity_rel.jl")
 # include("primitives/insupport.jl")
 
-# include("primitives/testvalue.jl")
+include("primitives/testvalue.jl")
 # include("primitives/testparams.jl")
 # include("primitives/weightedsampling.jl")
 # include("primitives/measures.jl")
