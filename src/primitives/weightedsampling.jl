@@ -13,7 +13,7 @@ end
 )
     cfg = (rng = rng,)
     ctx = (ℓ = 0.0, pars = NamedTuple())
-    gg_call(weightedrand, m, NamedTuple(), cfg, ctx, (r, ctx) -> ctx)
+    runmodel(weightedrand, m, NamedTuple(), cfg, ctx, (r, ctx) -> ctx)
 end
 
 @inline function tilde(

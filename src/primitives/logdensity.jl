@@ -14,15 +14,14 @@ using Accessors
 ) where {M,A,O}
     # cfg = merge(cfg, (pars=pars,))
     ctx = merge(ctx, (ℓ = 0.0,))
-    gg_call(logdensityof, cm, pars, cfg, ctx, retfun)
+    runmodel(logdensityof, cm, pars, cfg, ctx, retfun)
 end
 
 @inline function tilde(
-    ::typeof(logdensityof),
+    cfg::LogdensityofConfig,
     x::MaybeObserved{X},
     lens,
     d,
-    cfg,
     ctx::NamedTuple,
 ) where {X}
     x = value(x)
@@ -40,7 +39,7 @@ end
 ) where {M,A,O}
     # cfg = merge(cfg, (pars=pars,))
     ctx = merge(ctx, (ℓ = 0.0,))
-    gg_call(unsafe_logdensityof, cm, pars, cfg, ctx, retfun)
+    runmodel(unsafe_logdensityof, cm, pars, cfg, ctx, retfun)
 end
 
 @inline function tilde(

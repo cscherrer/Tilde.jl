@@ -9,7 +9,7 @@ EmptyNTtype = NamedTuple{(),Tuple{}} where {T<:Tuple}
     cfg = NamedTuple(),
     ctx = NamedTuple(),
 )
-    gg_call(testvalue, mc, NamedTuple(), cfg, ctx, (r, ctx) -> r)
+    runmodel(testvalue, mc, NamedTuple(), cfg, ctx, (r, ctx) -> r)
 end
 
 @inline function tilde(

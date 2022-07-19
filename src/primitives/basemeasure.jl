@@ -1,7 +1,7 @@
 import MeasureBase: basemeasure
 
 @inline function basemeasure(m::AbstractConditionalModel, pars; ctx = NamedTuple())
-    gg_call(basemeasure, m, pars, NamedTuple(), ctx, (r, ctx) -> ctx)
+    runmodel(basemeasure, m, pars, NamedTuple(), ctx, (r, ctx) -> ctx)
 end
 
 @inline function tilde(

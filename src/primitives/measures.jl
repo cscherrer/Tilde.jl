@@ -53,7 +53,7 @@ export measures
 
     ctx = rmap(sim, pars)
 
-    nt = gg_call(measures, latentof(m), pars, NamedTuple(), ctx, (r, ctx) -> ctx)
+    nt = runmodel(measures, latentof(m), pars, NamedTuple(), ctx, (r, ctx) -> ctx)
 
     f(x::AbstractArray) = productmeasure(narrow_array(x))
     f(x) = x

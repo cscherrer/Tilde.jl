@@ -60,7 +60,7 @@ function getdag(m::AbstractConditionalModel, pars)
     cfg = NamedTuple()
     pars = markovinate(pars)
     ctx = (dag = MetaGraph(DiGraph(), Label = Tuple{Symbol,Any}),)
-    ctx = gg_call(getdag, m, pars, cfg, ctx, (r, ctx) -> ctx)
+    ctx = runmodel(getdag, m, pars, cfg, ctx, (r, ctx) -> ctx)
     return ctx.dag
 end
 

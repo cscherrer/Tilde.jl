@@ -100,7 +100,7 @@ struct KnownVars{A,O,P}
     pars::P
 end
 
-@generated function gg_call(
+@generated function runmodel(
     _cfg,
     _mc::MC,
     _pars::NamedTuple{N,T},

@@ -6,7 +6,7 @@ EmptyNTtype = NamedTuple{(),Tuple{}} where {T<:Tuple}
 testparams(d::AbstractMeasure) = testvalue(d)
 
 @inline function testparams(mc::ModelClosure; cfg = NamedTuple(), ctx = NamedTuple())
-    gg_call(testparams, mc, NamedTuple(), cfg, ctx, (r, ctx) -> ctx)
+    runmodel(testparams, mc, NamedTuple(), cfg, ctx, (r, ctx) -> ctx)
 end
 
 ###############################################################################

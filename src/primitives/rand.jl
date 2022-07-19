@@ -112,7 +112,7 @@ end
     cfg::RandConfig{T_rng, RNG,P},
     m::ModelClosure,
 ) where {T_rng,RNG,P}
-    gg_call(cfg, m, NamedTuple(), NamedTuple())
+    runmodel(cfg, m, NamedTuple(), NamedTuple())
 end
 
 

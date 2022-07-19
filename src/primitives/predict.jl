@@ -33,7 +33,7 @@ end
 @inline function predict_rand(rng::AbstractRNG, m::AbstractConditionalModel, pars)
     cfg = (rng = rng, pars = pars)
     ctx = NamedTuple()
-    gg_call(predict_rand, m, pars, cfg, ctx, (r, ctx) -> r)
+    runmodel(predict_rand, m, pars, cfg, ctx, (r, ctx) -> r)
 end
 
 
@@ -78,7 +78,7 @@ end
     pars = rmap(anyfy, pars) 
     cfg = (f = f, pars = pars)
     ctx = NamedTuple()
-    gg_call(predict, m, pars, cfg, ctx, (r, ctx) -> r)
+    runmodel(predict, m, pars, cfg, ctx, (r, ctx) -> r)
 end
 
 @inline function predict(f, m::AbstractConditionalModel, tv::TupleVector)
