@@ -54,3 +54,28 @@ end
     @reset ctx.ℓ += MeasureBase.unsafe_logdensityof(latentof(d), lens(x))
     (x, ctx)
 end
+
+###############################################################################
+# Methods that throw errors
+
+
+@inline function MeasureBase.logdensityof(
+    cm::AbstractConditionalModel,
+    pars::NamedTuple;
+) 
+    @error """
+    `logdensity` on Tilde models requires a latent space. Try
+    `logdensityof(latentof(...), pars)`. 
+    """
+end
+
+@inline function MeasureBase.unsafe_logdensityof(
+    cm::AbstractConditionalModel,
+    pars::NamedTuple;
+) 
+    @error """
+    `unsafe_logdensity` on Tilde models requires a latent space. Try
+    `unsafe_logdensityof(latentof(...), pars)`. 
+    """
+end
+
