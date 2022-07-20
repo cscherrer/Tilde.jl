@@ -373,3 +373,27 @@ end
         NamedTuple{$names,$types}(($(vals...),))::NamedTuple{$names,$types}
     end
 end
+
+
+
+abstract type MayReturn end
+struct HasReturn <: MayReturn end
+struct NoReturn <: MayReturn end
+
+export hasreturn
+
+@generated function hasreturn(::M) where {M<:AbstractModel}
+    _hasreturn(body(M)) ? HasReturn() : NoReturn()
+end
+
+@generated function hasreturn(::M) where {M<:AbstractConditionalModel}
+    _hasreturn(body(model(M))) ? HasReturn() : NoReturn()
+end
+
+
+_hasreturn(x) = false
+
+function _hasreturn(ast::Expr)
+    ast.head == :return && return true
+    return any(_hasreturn, ast.args)
+end
