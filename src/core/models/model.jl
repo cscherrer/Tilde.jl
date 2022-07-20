@@ -35,6 +35,7 @@ jointof(m::AbstractConditionalModel) = setproj(m, identity)
 
 
 model(m::Model) = m
+model(::Type{M}) where {M} = type2model(M)
 
 function Base.convert(::Type{Expr}, m::Model)
     numArgs = length(m.args)
