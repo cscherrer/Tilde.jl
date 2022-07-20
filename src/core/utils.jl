@@ -382,6 +382,8 @@ struct NoReturn <: MayReturn end
 
 export hasreturn
 
+# These work just fine without the `@generated` but take *much* longer 
+# (92μs vs 1.3ns on a small model)
 @generated function hasreturn(::M) where {M<:AbstractModel}
     _hasreturn(body(M)) ? HasReturn() : NoReturn()
 end
