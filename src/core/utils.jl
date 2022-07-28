@@ -101,10 +101,6 @@ end
 
 import MacroTools: striplines, @q
 
-# function arguments(model::DAGModel)
-#     model.args
-# end
-
 allequal(xs) = all(xs[1] .== xs)
 
 # # fold example usage:
@@ -130,20 +126,19 @@ allequal(xs) = all(xs[1] .== xs)
 # # (s = [0.545324, 0.281332, 0.418541, 0.485946], a = 2.217762640580984)
 
 # From https://github.com/thautwarm/MLStyle.jl/issues/66
-@active LamExpr(x) begin
-    @match x begin
-        :($a -> begin
-            $(bs...)
-        end) => let exprs = filter(x -> !(x isa LineNumberNode), bs)
-            if length(exprs) == 1
-                (a, exprs[1])
-            else
-                (a, Expr(:block, bs...))
-            end
-        end
-        _ => nothing
-    end
-end
+# @active LamExpr(x) begin
+#            @match x begin
+#                :($a -> begin $(bs...) end) =>
+#                  let exprs = filter(x -> !(x isa LineNumberNode), bs)
+#                    if length(exprs) == 1
+#                      (a, exprs[1])
+#                    else
+#                      (a, Expr(:block, bs...))
+#                      end
+#                end
+#                 _  => nothing
+#            end
+#        end
 
 # using BenchmarkTools
 # f(;kwargs...) = kwargs[:a] + kwargs[:b]
@@ -156,35 +151,12 @@ end
 # @__MODULE__
 # names
 
-# getprototype(::Type{NamedTuple{(),Tuple{}}}) = NamedTuple()
-getprototype(::Type{NamedTuple{N,T} where {T<:Tuple}}) where {N} = NamedTuple{N}
-getprototype(::NamedTuple{N,T} where {T<:Tuple}) where {N} = NamedTuple{N}
-
-function loadvals(argstype, obstype)
-    args = getntkeys(argstype)
-    obs = getntkeys(obstype)
-    loader = @q begin end
-
-    for k in args
-        push!(loader.args, :($k = _args.$k))
-    end
-    for k in obs
-        push!(loader.args, :($k = _obs.$k))
-    end
-
-    src -> (@q begin
-        $loader
-        $src
-    end) |> MacroTools.flatten
-end
-
 function loadvals(argstype, obstype, parstype)
     args = schema(argstype)
     data = schema(obstype)
     pars = schema(parstype)
 
-    loader = @q begin
-    end
+    loader = @q begin end
 
     for k in keys(args) ∪ keys(pars) ∪ keys(data)
         push!(loader.args, :(local $k))
@@ -222,11 +194,6 @@ function loadvals(argstype, obstype, parstype)
         $src
     end) |> MacroTools.flatten
 end
-
-getntkeys(::NamedTuple{A,B}) where {A,B} = A
-getntkeys(::Type{NamedTuple{A,B}}) where {A,B} = A
-getntkeys(::Type{NamedTuple{A}}) where {A} = A
-getntkeys(::Type{LazyMerge{X,Y}}) where {X,Y} = Tuple(getntkeys(X) ∪ getntkeys(Y))
 
 # This is just handy for REPLing, no direct connection to Tilde
 
@@ -377,4 +344,58 @@ narrow_array(x) = collect(Base.Generator(identity, x))
 
 function parse_optic(ex)
     unescape.(Accessors.parse_obj_optic(ex))
+end
+
+Base.@pure function merge_names(an::Tuple{Vararg{Symbol}}, bn::Tuple{Vararg{Symbol}})
+    @nospecialize an bn
+    names = Symbol[an...]
+    for n in bn
+        if !sym_in(n, an)
+            push!(names, n)
+        end
+    end
+    (names...,)
+end
+
+Base.@pure function merge_types(names::Tuple{Vararg{Symbol}}, a::Type{<:NamedTuple}, b::Type{<:NamedTuple})
+    @nospecialize names a b
+    bn = _nt_names(b)
+    return Tuple{Any[ fieldtype(sym_in(names[n], bn) ? b : a, names[n]) for n in 1:length(names) ]...}
+end
+
+
+@generated function mymerge(a::NamedTuple{an}, b::NamedTuple{bn}) where {an, bn}
+    names = Base.merge_names(an, bn)
+    types = Base.merge_types(names, a, b)
+    vals = Any[ :(getfield($(Base.sym_in(names[n], bn) ? :b : :a), $(QuoteNode(names[n])))) for n in 1:length(names) ]
+    quote
+        # $(Expr(:meta, :inline))
+        NamedTuple{$names,$types}(($(vals...),))::NamedTuple{$names,$types}
+    end
+end
+
+
+
+abstract type MayReturn end
+struct HasReturn <: MayReturn end
+struct NoReturn <: MayReturn end
+
+export hasreturn
+
+# These work just fine without the `@generated` but take *much* longer 
+# (92μs vs 1.3ns on a small model)
+@generated function hasreturn(::M) where {M<:AbstractModel}
+    _hasreturn(body(M)) ? HasReturn() : NoReturn()
+end
+
+@generated function hasreturn(::M) where {M<:AbstractConditionalModel}
+    _hasreturn(body(model(M))) ? HasReturn() : NoReturn()
+end
+
+
+_hasreturn(x) = false
+
+function _hasreturn(ast::Expr)
+    ast.head == :return && return true
+    return any(_hasreturn, ast.args)
 end

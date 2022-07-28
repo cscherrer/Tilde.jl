@@ -1,27 +1,17 @@
-export interpret
+export runmodel
 
 @inline function inkeys(::StaticSymbol{s}, ::Type{NamedTuple{N,T}}) where {s,N,T}
     return s ∈ N
-end
-
-function interpret(m::Model{A,B,M}, tilde, ctx0) where {A,B,M}
-    theModule = getmodule(m)
-    mk_function(theModule, make_body(theModule, m.body, tilde, ctx0))
 end
 
 function make_body(M, f, m::AbstractModel)
     make_body(M, body(m))
 end
 
-struct Observed{T}
-    value::T
-end
+call(f, g, args...; kwargs...) = g(args...; kwargs...)
 
-struct Unobserved{T}
-    value::T
-end
-
-function make_body(M, f, ast::Expr, retfun, argsT, obsT, parsT)
+function make_body(M, ast::Expr, proj, argsT, obsT, parsT, paramnames)
+    paramvals = Expr(:tuple, paramnames...) 
     knownvars = union(keys.(schema.((argsT, obsT, parsT)))...)
     function go(ex, scope = (bounds = Var[], freevars = Var[], bound_inits = Symbol[]))
         @match ex begin
@@ -43,28 +33,35 @@ function make_body(M, f, ast::Expr, retfun, argsT, obsT, parsT)
                 # X = to_type(unsolved_lhs)
                 # M = to_type(unsolve(rhs))
 
-                inargs = inkeys(sx, argsT)
+                # inargs = inkeys(sx, argsT)
                 inobs = inkeys(sx, obsT)
-                inpars = inkeys(sx, parsT)
+                # inpars = inkeys(sx, parsT)
                 rhs = unsolve(rhs)
-
-                xval = if inobs
-                    :($Observed($x))
+                    
+                obj = if inobs
+                    # TODO: Even if `x` is observed, we may have `lens(x) == missing`
+                    :($Observed{$qx}($x))
                 else
-                    (x ∈ knownvars ? :($Unobserved($x)) : :($Unobserved(missing)))
+                    (if x ∈ knownvars
+                        :($Unobserved{$qx}($x))
+                    else
+                        :($Unobserved{$qx}(missing))
+                    end)
                 end
-                st = :(($x, _ctx, _retn) = $tilde($f, $l, $sx, $xval, $rhs, _cfg, _ctx))
-                qst = QuoteNode(st)
+                st = :(($x, _ctx) = $tilde(_cfg, $obj, $l, $rhs, _ctx))
+                # qst = QuoteNode(st)
                 q = quote
                     # println($qst)
                     $st
-                    _retn isa Tilde.ReturnNow && return _retn.value
+                    _ctx isa Tilde.ReturnNow && return _ctx.value
                 end
 
                 q
             end
 
-            :(return $r) => :(return $retfun($r, _ctx))
+            :(return $r) => quote
+                    return Tilde.retfun(_cfg, NamedTuple{$paramnames}($paramvals) => $r, _ctx)
+                end
 
             Expr(:scoped, new_scope, ex) => begin
                 go(ex, new_scope)
@@ -76,9 +73,10 @@ function make_body(M, f, ast::Expr, retfun, argsT, obsT, parsT)
         end
     end
 
-    body = go(@q begin
-        $(solve_scope(opticize(ast)))
-    end) |> unsolve |> MacroTools.flatten
+    body =
+        go(@q begin
+            $(solve_scope(opticize(ast)))
+        end) |> unsolve |> MacroTools.flatten
 
     body
 end
@@ -91,14 +89,18 @@ end
 #     error(ex)
 # end
 
-@generated function gg_call(
-    ::F,
+struct KnownVars{A,O,P}
+    args::A
+    obs::O
+    pars::P
+end
+
+@generated function runmodel(
+    _cfg,
     _mc::MC,
     _pars::NamedTuple{N,T},
-    _cfg,
     _ctx,
-    ::R,
-) where {F,MC,N,T,R}
+) where {MC,N,T}
     _m = type2model(MC)
     M = getmodule(_m)
 
@@ -108,19 +110,20 @@ end
 
     body = _m.body |> loadvals(argsT, obsT, parsT)
 
-    f = MeasureBase.instance(F)
-    _retfun = MeasureBase.instance(R)
-    body = make_body(M, f, body, _retfun, argsT, obsT, parsT)
+    paramnames = tuple(parameters(_m)...)
+    paramvals = Expr(:tuple, paramnames...) 
+    _proj = getproj(MC)
+    body = make_body(M, body, _proj, argsT, obsT, parsT, paramnames)
 
     q = MacroTools.flatten(
-        @q @inline function (_mc, _cfg, _ctx, _pars, _retfun)
-            local _retn
+        @q function (_mc, _cfg, _ctx, _pars)
             _args = $argvals(_mc)
             _obs = $observations(_mc)
-            _cfg = merge(_cfg, (args = _args, obs = _obs, pars = _pars))
+            # _vars = KnownVars(_args, _obs, _pars)
             $body
             # If body doesn't have a return, default to `return ctx`
-            return $_retfun(_ctx, _ctx)
+            _params = NamedTuple{$paramnames}($paramvals)
+            return Tilde.retfun(_cfg, _params => _params, _ctx)
         end
     )
 

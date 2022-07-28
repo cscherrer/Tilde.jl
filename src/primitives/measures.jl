@@ -42,6 +42,13 @@
 #      Normal(μ = -3.75905,)
 # """
 
+struct MeasuresConfig{P} <: AbstractTildeConfig
+    pars::P
+end
+
+@inline retfun(cfg::MeasuresConfig, r, ctx) = ctx
+
+
 export measures
 
 @inline function measures(m::AbstractConditionalModel, pars::NamedTuple{N,T}) where {N,T}
@@ -51,9 +58,10 @@ export measures
     end
     sim(x) = x
 
+    cfg=  MeasuresConfig(pars)
     ctx = rmap(sim, pars)
 
-    nt = gg_call(measures, m, pars, NamedTuple(), ctx, (r, ctx) -> ctx)
+    nt = runmodel(cfg, latentof(m), pars, ctx)
 
     f(x::AbstractArray) = productmeasure(narrow_array(x))
     f(x) = x
@@ -61,32 +69,21 @@ export measures
     rmap(f, nt)
 end
 
-@inline function tilde(
-    ::typeof(measures),
-    ::typeof(identity),
-    xname,
-    ::Unobserved,
-    d,
-    cfg,
-    ctx,
-)
+@inline function tilde(cfg::MeasuresConfig, x::Unobserved{X}, d, ctx) where {X}
     x = testvalue(d)
-    xname = dynamic(xname)
-    ctx = merge(ctx, NamedTuple{(xname,)}((d,)))
-    (x, ctx, ctx)
+    ctx = merge(ctx, NamedTuple{X}((d,)))
+    (x, ctx)
 end
 
-@inline function tilde(::typeof(measures), lens, xname, x::Unobserved, d, cfg, ctx)
-    xname = dynamic(xname)
-    ctx = set(ctx, PropertyLens{xname}() ⨟ Lens!!(lens), d)
+@inline function tilde(cfg::MeasuresConfig, x::Unobserved{X}, lens, d, ctx) where {X}
+    ctx = set(ctx, PropertyLens{X}() ⨟ Lens!!(lens), d)
 
-    xnew = getproperty(cfg.pars, xname)
-    (xnew, ctx, ctx)
+    xnew = getproperty(cfg.pars, X)
+    (xnew, ctx)
 end
 
-@inline function tilde(::typeof(measures), lens, xname, x::Observed, d, cfg, ctx)
-    x = x.value
-    (x, ctx, ctx)
+@inline function tilde(cfg::MeasuresConfig, x::Observed{X}, lens, d, ctx) where {X}
+    (value(x), ctx)
 end
 
 function as(mdl::AbstractConditionalModel)
@@ -94,4 +91,4 @@ function as(mdl::AbstractConditionalModel)
     as(map(as, ms))
 end
 
-measures(m) = measures(m, testvalue(m))
+measures(m) = measures(m, testvalue(latentof(m)))

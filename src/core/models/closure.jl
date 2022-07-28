@@ -1,7 +1,24 @@
-struct ModelClosure{M,A} <: AbstractConditionalModel{M,A,NamedTuple{(),Tuple{}}}
+struct ModelClosure{M,V,P} <: AbstractConditionalModel{M,V,NamedTuple{(),Tuple{}},P}
     model::M
-    argvals::A
+    argvals::V
 end
+
+setproj(m::AbstractMeasure, ::typeof(first)) = latentof(m)
+setproj(m::AbstractMeasure, ::typeof(last)) = manifestof(m)
+setproj(m::AbstractMeasure, ::typeof(identity)) = jointof(m)
+
+function setproj(c::ModelClosure{M,V}, f::F) where {M,V,F}
+    setproj(model(c), f)(argvals(c))
+end
+
+for f in [first, last, identity]
+    @eval begin
+        function setproj(c::ModelClosure{M,V}, ::typeof($f)) where {M,V}
+            setproj(model(c), $f)(argvals(c))
+        end
+    end
+end
+
 
 function Base.show(io::IO, mc::ModelClosure)
     println(io, "ModelClosure given")
@@ -23,9 +40,7 @@ end
 
 model(c::ModelClosure) = c.model
 
-ModelClosure(m::AbstractModel) = ModelClosure(m, NamedTuple())
-
-(m::AbstractModel)(nt::NamedTuple) = ModelClosure(m, nt)
+(m::AbstractModel{A,B,M,P})(nt::NT) where {A,B,M,P,NT<:NamedTuple} = ModelClosure{Model{A,B,M,P}, NT, P}(m,nt)
 
 (mc::ModelClosure)(nt::NamedTuple) = ModelClosure(model(mc), merge(mc.argvals, nt))
 
@@ -36,5 +51,3 @@ obstype(::ModelClosure) = NamedTuple{(),Tuple{}}
 obstype(::Type{<:ModelClosure}) = NamedTuple{(),Tuple{}}
 
 type2model(::Type{MC}) where {M,MC<:ModelClosure{M}} = type2model(M)
-
-MeasureBase.condition(m::ModelClosure, nt::NamedTuple) = ModelPosterior(m, nt)

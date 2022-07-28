@@ -1,6 +1,10 @@
-struct ModelPosterior{M,A,O} <: AbstractConditionalModel{M,A,O}
-    closure::ModelClosure{M,A}
+struct ModelPosterior{M,V,O,P} <: AbstractConditionalModel{M,V,O,P}
+    closure::ModelClosure{M,V,P}
     obs::O
+end
+
+function setproj(p::ModelPosterior{M,V,O}, f::F) where {M,V,O,F}
+    ModelPosterior{M,V,O,F}(setproj(p.closure, f), observations(p))
 end
 
 model(post::ModelPosterior) = model(post.closure)
@@ -41,3 +45,5 @@ end
 function Base.:|(post::ModelPosterior, nt::NamedTuple)
     ModelPosterior(post.closure, merge(post.obs, nt))
 end
+
+MeasureBase.condition(m::MC, nt::NT) where {M,V,P,MC<:ModelClosure{M,V,P},NT<:NamedTuple} = ModelPosterior{M, V, NT, P}(m, nt)
