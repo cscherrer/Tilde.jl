@@ -1,22 +1,6 @@
-struct ModelClosure{M,V,P} <: AbstractConditionalModel{M,V,NamedTuple{(),Tuple{}},P}
+struct ModelClosure{M,V} <: AbstractConditionalModel{M,V,NamedTuple{(),Tuple{}}}
     model::M
     argvals::V
-end
-
-setproj(m::AbstractMeasure, ::typeof(first)) = latentof(m)
-setproj(m::AbstractMeasure, ::typeof(last)) = manifestof(m)
-setproj(m::AbstractMeasure, ::typeof(identity)) = jointof(m)
-
-function setproj(c::ModelClosure{M,V}, f::F) where {M,V,F}
-    setproj(model(c), f)(argvals(c))
-end
-
-for f in [first, last, identity]
-    @eval begin
-        function setproj(c::ModelClosure{M,V}, ::typeof($f)) where {M,V}
-            setproj(model(c), $f)(argvals(c))
-        end
-    end
 end
 
 
@@ -40,7 +24,7 @@ end
 
 model(c::ModelClosure) = c.model
 
-(m::AbstractModel{A,B,M,P})(nt::NT) where {A,B,M,P,NT<:NamedTuple} = ModelClosure{Model{A,B,M,P}, NT, P}(m,nt)
+(m::AbstractModel{A,B,M})(nt::NT) where {A,B,M,P,NT<:NamedTuple} = ModelClosure{Model{A,B,M}, NT}(m,nt)
 
 (mc::ModelClosure)(nt::NamedTuple) = ModelClosure(model(mc), merge(mc.argvals, nt))
 

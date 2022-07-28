@@ -14,7 +14,7 @@ end
 
 
 @inline function MeasureBase.logdensityof(
-    cm::AbstractConditionalModel{M,A,O,typeof(first)},
+    cm::AbstractConditionalModel{M,A,O},
     pars::NamedTuple;
 ) where {M,A,O}
     # cfg = merge(cfg, (pars=pars,))
@@ -36,7 +36,7 @@ end
 end
 
 @inline function MeasureBase.unsafe_logdensityof(
-    cm::AbstractConditionalModel{M,A,O,typeof(first)},
+    cm::AbstractConditionalModel{M,A,O},
     pars::NamedTuple;
 ) where {M,A,O}
     cfg = LogdensityConfig(unsafe_logdensityof)
@@ -51,62 +51,6 @@ end
     ctx::NamedTuple,
 ) where {X}
     x = value(x)
-    @reset ctx.ℓ += MeasureBase.unsafe_logdensityof(latentof(d), lens(x))
+    @reset ctx.ℓ += MeasureBase.unsafe_logdensityof(d, lens(x))
     (x, ctx)
 end
-
-###############################################################################
-# If a model has no return value, there's no need to take `latentof`
-
-@inline function MeasureBase.logdensityof(
-    cm::AbstractConditionalModel{M,A,O,typeof(last)},
-    pars::NamedTuple;
-) where {M,A,O}
-    _logdensityof(cm, pars, hasreturn(cm))
-end
-
-@inline function _logdensityof(
-    cm::AbstractConditionalModel{M,A,O,typeof(last)},
-    pars::NamedTuple,
-    ::HasReturn
-) where {M,A,O}
-    @error """
-    `logdensity` on Tilde models requires a latent space. Try
-    `logdensityof(latentof(...), pars)`. 
-    """
-end
-
-@inline function _logdensityof(
-    cm::AbstractConditionalModel{M,A,O,typeof(last)},
-    pars::NamedTuple,
-    ::NoReturn
-) where {M,A,O}
-    # cfg = merge(cfg, (pars=pars,))
-    cfg = LogdensityConfig(logdensityof)
-    runmodel(cfg, latentof(cm), pars, (ℓ=0.0,))
-end
-
-###############################################################################
-# Methods that throw errors
-
-
-@inline function MeasureBase.logdensityof(
-    cm::AbstractConditionalModel,
-    pars::NamedTuple;
-) 
-    @error """
-    `logdensity` on Tilde models requires a latent space. Try
-    `logdensityof(latentof(...), pars)`. 
-    """
-end
-
-@inline function MeasureBase.unsafe_logdensityof(
-    cm::AbstractConditionalModel,
-    pars::NamedTuple;
-) 
-    @error """
-    `unsafe_logdensity` on Tilde models requires a latent space. Try
-    `unsafe_logdensityof(latentof(...), pars)`. 
-    """
-end
-

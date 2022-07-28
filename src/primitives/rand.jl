@@ -1,19 +1,18 @@
 using Random: GLOBAL_RNG
 using TupleVectors: chainvec
 
-struct RandConfig{T_rng, RNG, P} <: AbstractTildeConfig
+struct RandConfig{T_rng, RNG} <: AbstractTildeConfig
     rng::RNG
-    proj::P
 
-    RandConfig(::Type{T_rng}, rng::RNG, proj::P) where {T_rng, RNG<:AbstractRNG, P} = new{T_rng,RNG,P}(rng,proj)
+    RandConfig(::Type{T_rng}, rng::RNG) where {T_rng, RNG<:AbstractRNG} = new{T_rng,RNG}(rng)
 end
 
-RandConfig(rng,proj) = RandConfig(Float64, rng, proj)
-RandConfig(proj) = RandConfig(Float64, Random.GLOBAL_RNG, proj)
+RandConfig(rng) = RandConfig(Float64, rng)
+RandConfig() = RandConfig(Float64, Random.GLOBAL_RNG)
 
 
-@inline function retfun(cfg::RandConfig, joint::Pair, ctx)
-    cfg.proj(ctx => last(joint))
+@inline function retfun(cfg::RandConfig, r, ctx)
+    r
 end
 
 
@@ -26,7 +25,7 @@ EmptyNTtype = NamedTuple{(),Tuple{}} where {T<:Tuple}
     ::Type{T_rng},
     mc::ModelClosure
 ) where {T_rng}
-    cfg = RandConfig(T_rng, rng, getproj(mc))
+    cfg = RandConfig(T_rng, rng)
     pars = NamedTuple()
     ctx = NamedTuple()
     runmodel(cfg, mc, pars, ctx)
@@ -36,26 +35,12 @@ end
 # tilde
 
 @inline function tilde(
-    cfg::RandConfig{T_rng, RNG, typeof(last)},
-    x::Unobserved,
-    lens,
-    d,
-    ctx,
-) where {T_rng, RNG}
-    r = rand(cfg.rng, T_rng, d)
-    xnew = set(value(x), Lens!!(lens), r)
-    (xnew, ctx)
-end
-
-@inline function tilde(
-    cfg::RandConfig{T_rng, RNG, P},
+    cfg::RandConfig{T_rng, RNG},
     x::Unobserved{X},
     lens,
     d,
     ctx,
-) where {X,T_rng, RNG,P}
-    joint = rand(cfg.rng, T_rng, jointof(d))
-    latent, retn = joint
+) where {X,T_rng, RNG}
     xnew = set(value(x), Lens!!(lens), retn)
     ctx′ = mymerge(ctx, NamedTuple{(X,)}((latent,)))
     (xnew, ctx′)

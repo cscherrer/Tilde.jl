@@ -5,7 +5,7 @@ struct TestValueConfig{P} <: AbstractTildeConfig
     proj::P
 end
 
-@inline retfun(cfg::TestValueConfig, r, ctx) = cfg.proj(r)
+@inline retfun(cfg::TestValueConfig, r, ctx) = r
 
 
 export testvalue

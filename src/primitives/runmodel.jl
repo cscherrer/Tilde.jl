@@ -60,8 +60,9 @@ function make_body(M, ast::Expr, proj, argsT, obsT, parsT, paramnames)
             end
 
             :(return $r) => quote
-                    return Tilde.retfun(_cfg, NamedTuple{$paramnames}($paramvals) => $r, _ctx)
-                end
+                return Tilde.retfun(_cfg, $r, _ctx)
+                # return Tilde.retfun(_cfg, NamedTuple{$paramnames}($paramvals) => $r, _ctx)
+            end
 
             Expr(:scoped, new_scope, ex) => begin
                 go(ex, new_scope)
@@ -112,7 +113,6 @@ end
 
     paramnames = tuple(parameters(_m)...)
     paramvals = Expr(:tuple, paramnames...) 
-    _proj = getproj(MC)
     body = make_body(M, body, _proj, argsT, obsT, parsT, paramnames)
 
     q = MacroTools.flatten(
@@ -123,7 +123,7 @@ end
             $body
             # If body doesn't have a return, default to `return ctx`
             _params = NamedTuple{$paramnames}($paramvals)
-            return Tilde.retfun(_cfg, _params => _params, _ctx)
+            return Tilde.retfun(_cfg, _params, _ctx)
         end
     )
 
