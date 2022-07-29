@@ -7,7 +7,7 @@ function Model(theModule::Module, args::Vector{Symbol}, body::Expr)
     A = NamedTuple{Tuple(args)}
     B = to_type(body)
     M = to_type(theModule)
-    return Model{A,B,M,typeof(last)}(args, body, last)
+    return Model{A,B,M}(args, body)
 end
 
 model(m::Model) = m

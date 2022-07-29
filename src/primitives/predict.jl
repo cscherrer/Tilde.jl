@@ -2,6 +2,24 @@ using Random: GLOBAL_RNG, AbstractRNG
 using TupleVectors
 export predict
 
+struct PredictConfig{T_rng, RNG,P} <: AbstractTildeConfig
+    rng::RNG
+    pars::P
+    PredictConfig(::Type{T_rng}, rng::RNG, pars::P) where {T_rng, RNG<:AbstractRNG,P} = new{T_rng,RNG,P}(rng,pars)
+end
+
+PredictConfig(::Type{T_rng}, rng::AbstractRNG) where {T_rng} = PredictConfig(T_rng, rng, NamedTuple())
+PredictConfig(::Type{T_rng}, pars) where {T_rng} = PredictConfig(T_rng, GLOBAL_RNG, pars)
+PredictConfig(rng::AbstractRNG, pars)  = PredictConfig(Float64, rng, pars)
+
+PredictConfig(::Type{T_rng}) where {T_rng} = PredictConfig(T_rng, GLOBAL_RNG, NamedTuple())
+PredictConfig(rng::AbstractRNG) = PredictConfig(Float64, rng, NamedTuple())
+PredictConfig(pars) = PredictConfig(Float64, GLOBAL_RNG, pars)
+
+PredictConfig() where {T_rng} = PredictConfig(Float64, GLOBAL_RNG, NamedTuple())
+
+retfun(::PredictConfig, r, ctx) = r
+
 
 anyfy(x) = x
 anyfy(x::AbstractArray) = collect(Any, x)
@@ -22,22 +40,18 @@ end
 ###############################################################################
 # `predict` for forward random sampling
 
-@inline function predict(m::AbstractConditionalModel, pars)
-    predict(GLOBAL_RNG, m, pars)
-end
-
 @inline function predict(rng::AbstractRNG, m::AbstractConditionalModel, pars::NamedTuple)
     predict_rand(rng::AbstractRNG, m::AbstractConditionalModel, pars)
 end
 
 @inline function predict_rand(rng::AbstractRNG, m::AbstractConditionalModel, pars)
-    cfg = (rng = rng, pars = pars)
+    cfg = PredictConfig(rng, pars)
     ctx = NamedTuple()
-    runmodel(predict_rand, m, pars, cfg, ctx, (r, ctx) -> r)
+    runmodel(cfg, m, pars, ctx)
 end
 
 
-@inline function tilde(::typeof(predict_rand), x, lens, d, cfg, ctx)
+@inline function tilde(cfg::PredictConfig, x, lens, d, ctx)
     tilde_predict(cfg.rng, x, lens, d, cfg.pars, ctx)
 end
 
@@ -61,7 +75,7 @@ end
     else
         quote
             # @info "$X ∉ N"
-            xnew = set(value(x), Lens!!(lens), rand(rng, d))
+            xnew = set(value(x), Lens!!(lens), predict(rng, d))
             ctx = merge(ctx, NamedTuple{(X,)}((xnew,)))
             (xnew, ctx)
         end
@@ -145,3 +159,30 @@ end
 #         end
 #     end
 # end
+
+
+
+###############################################################################
+# Dispatch helpers
+
+
+@inline function predict(rng::AbstractRNG, m::ModelPosterior, pars::NamedTuple)
+    predict_rand(rng, m.closure, pars)
+end
+
+
+@inline function predict(m::AbstractConditionalModel, pars)
+    predict(GLOBAL_RNG, m, pars)
+end
+
+
+@inline function predict(m::AbstractConditionalModel)
+    predict(GLOBAL_RNG, m, NamedTuple())
+end
+
+@inline function predict(rng::AbstractRNG, m::AbstractConditionalModel)
+    predict_rand(rng, m, NamedTuple())
+end
+
+predict(args...) = rand(args...)
+

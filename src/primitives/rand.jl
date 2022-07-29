@@ -12,14 +12,30 @@ RandConfig() = RandConfig(Float64, Random.GLOBAL_RNG)
 
 
 @inline function retfun(cfg::RandConfig, r, ctx)
-    r
+    ctx
 end
 
 
 export rand
 EmptyNTtype = NamedTuple{(),Tuple{}} where {T<:Tuple}
 
+"""
+    rand([rng=GLOBAL_RNG, T_rng=Float64,] mc::ModelClosure)
 
+Draw a sample from the model closure `mc`. There are two optional arguments:
+1. `rng` specifies an `AbstractRNG` to use for sampling
+2. `T_rng` specifies a type to pass to the inner call to `rand`. This makes it
+   easy to sample using types other than the default `Float64`.
+
+Note that `mc` must be a closure (a model with specified arguements). In
+particular, calling `rand` on a `ModelPosterior` (a closure with conditioning)
+is disallowed. To ignore the conditioning for some `post::ModelPosterior`, you
+can use `rand(post.closure)`.
+
+Also note that a model closure is considered to be a measure on its _latent
+space_. That is, any return value in the model is ignored by `rand`. Use
+`predict` if you want the return value instead of a point in the latent space.
+"""
 @inline function Base.rand(
     rng::AbstractRNG,
     ::Type{T_rng},
@@ -41,8 +57,9 @@ end
     d,
     ctx,
 ) where {X,T_rng, RNG}
-    xnew = set(value(x), Lens!!(lens), retn)
-    ctx′ = mymerge(ctx, NamedTuple{(X,)}((latent,)))
+    r = rand(cfg.rng, T_rng, d)
+    xnew = set(value(x), Lens!!(lens), r)
+    ctx′ = mymerge(ctx, NamedTuple{(X,)}((xnew,)))
     (xnew, ctx′)
 end
 
@@ -92,7 +109,24 @@ end
     rand(GLOBAL_RNG, T_rng, mc, N; kwargs...)
 end
 
+"""
+    rand([rng=GLOBAL_RNG, T_rng=Float64,] mc::ModelClosure, N::Integer)
 
+Draw `N` samples from the model closure `mc`, packaging the result in a
+`TupleVector`. There are two optional arguments:
+1. `rng` specifies an `AbstractRNG` to use for sampling
+2. `T_rng` specifies a type to pass to the inner call to `rand`. This makes it
+   easy to sample using types other than the default `Float64`.
+
+Note that `mc` must be a closure (a model with specified arguements). In
+particular, calling `rand` on a `ModelPosterior` (a closure with conditioning)
+is disallowed. To ignore the conditioning for some `post::ModelPosterior`, you
+can use `rand(post.closure)`.
+
+Also note that a model closure is considered to be a measure on its _latent
+space_. That is, any return value in the model is ignored by `rand`. Use
+`predict` if you want the return value instead of a point in the latent space.
+"""
 @inline function Base.rand(
     rng::AbstractRNG,
     ::Type{T_rng},

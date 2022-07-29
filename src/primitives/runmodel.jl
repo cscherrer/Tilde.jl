@@ -10,8 +10,7 @@ end
 
 call(f, g, args...; kwargs...) = g(args...; kwargs...)
 
-function make_body(M, ast::Expr, proj, argsT, obsT, parsT, paramnames)
-    paramvals = Expr(:tuple, paramnames...) 
+function make_body(M, ast::Expr, argsT, obsT, parsT)
     knownvars = union(keys.(schema.((argsT, obsT, parsT)))...)
     function go(ex, scope = (bounds = Var[], freevars = Var[], bound_inits = Symbol[]))
         @match ex begin
@@ -113,7 +112,7 @@ end
 
     paramnames = tuple(parameters(_m)...)
     paramvals = Expr(:tuple, paramnames...) 
-    body = make_body(M, body, _proj, argsT, obsT, parsT, paramnames)
+    body = make_body(M, body, argsT, obsT, parsT)
 
     q = MacroTools.flatten(
         @q function (_mc, _cfg, _ctx, _pars)

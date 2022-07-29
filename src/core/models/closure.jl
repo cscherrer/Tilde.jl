@@ -24,7 +24,7 @@ end
 
 model(c::ModelClosure) = c.model
 
-(m::AbstractModel{A,B,M})(nt::NT) where {A,B,M,P,NT<:NamedTuple} = ModelClosure{Model{A,B,M}, NT}(m,nt)
+(m::AbstractModel{A,B,M})(nt::NT) where {A,B,M,NT<:NamedTuple} = ModelClosure{Model{A,B,M}, NT}(m,nt)
 
 (mc::ModelClosure)(nt::NamedTuple) = ModelClosure(model(mc), merge(mc.argvals, nt))
 

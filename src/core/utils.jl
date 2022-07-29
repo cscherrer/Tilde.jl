@@ -3,6 +3,22 @@ using MLStyle
 using NestedTuples
 using NestedTuples: LazyMerge
 
+
+schema_shallow(::NamedTuple{(), Tuple{}}) = NamedTuple()
+schema_shallow(::Type{NamedTuple{(), Tuple{}}}) = NamedTuple()
+
+function schema_shallow(NT::Type{NamedTuple{names, T}}) where {names, T}
+    return namedtuple(NestedTuples.ntkeys(NT), schema_shallow(NestedTuples.ntvaltype(NT)))
+end
+
+function schema_shallow(TT::Type{T}) where {T <: Tuple} 
+    return Tuple(TT.types)
+end
+
+schema_shallow(t::T) where {T <: NamedTuple} = schema_shallow(T) 
+
+schema_shallow(T) = T
+
 expr(x) = :(identity($x))
 
 # like `something`, but doesn't throw an error
@@ -350,7 +366,7 @@ Base.@pure function merge_names(an::Tuple{Vararg{Symbol}}, bn::Tuple{Vararg{Symb
     @nospecialize an bn
     names = Symbol[an...]
     for n in bn
-        if !sym_in(n, an)
+        if !Base.sym_in(n, an)
             push!(names, n)
         end
     end
@@ -359,8 +375,8 @@ end
 
 Base.@pure function merge_types(names::Tuple{Vararg{Symbol}}, a::Type{<:NamedTuple}, b::Type{<:NamedTuple})
     @nospecialize names a b
-    bn = _nt_names(b)
-    return Tuple{Any[ fieldtype(sym_in(names[n], bn) ? b : a, names[n]) for n in 1:length(names) ]...}
+    bn = Base._nt_names(b)
+    return Tuple{Any[ fieldtype(Base.sym_in(names[n], bn) ? b : a, names[n]) for n in 1:length(names) ]...}
 end
 
 
