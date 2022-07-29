@@ -4,7 +4,7 @@ import TransformVariables as TV
 using Aqua
 using Tilde
 
-Aqua.test_all(Tilde; ambiguities=false, unbound_args=false)
+Aqua.test_all(Tilde; ambiguities=false)
 
 include("examples-list.jl")
 
@@ -59,8 +59,10 @@ include("examples-list.jl")
             y ~ Bernoulli(p)
             return y
         end
-            
-        mean(predict(m(), [(p=p,) for p in rand(10000)])) isa Float64
+        
+        @test predict(m(), (p=rand(),)) isa Bool
+
+        # @test mean(predict(m(), [(p=p,) for p in rand(10000)])) isa AbstractFloat
     end
 
     @testset "https://github.com/cscherrer/Soss.jl/issues/258" begin
@@ -172,7 +174,7 @@ end
 
 
 
-end
+
 
 
 @testset "Nested models" begin
@@ -198,4 +200,6 @@ end
 
     @test rand(m(); ctx=()) isa Bool
     @test logdensity(m(), rand(m())) isa Float64
+end
+
 end

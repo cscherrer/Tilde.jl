@@ -3,7 +3,7 @@ function scoping(ast)
     @match ast begin
         :([$(frees...)]($(args...)) -> begin
             $(stmts...)
-        end) => let stmts = map(rec, stmts), arw   = :(($(args...),) -> begin
+        end) => let stmts = map(rec, stmts), arw = :(($(args...),) -> begin
                 $(stmts...)
             end)
             Expr(:scope, (), Tuple(frees), (), arw)

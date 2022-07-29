@@ -1,7 +1,8 @@
-struct ModelClosure{M,A} <: AbstractConditionalModel{M,A,NamedTuple{(),Tuple{}}}
+struct ModelClosure{M,V} <: AbstractConditionalModel{M,V,NamedTuple{(),Tuple{}}}
     model::M
-    argvals::A
+    argvals::V
 end
+
 
 function Base.show(io::IO, mc::ModelClosure)
     println(io, "ModelClosure given")
@@ -23,9 +24,7 @@ end
 
 model(c::ModelClosure) = c.model
 
-ModelClosure(m::AbstractModel) = ModelClosure(m, NamedTuple())
-
-(m::AbstractModel)(nt::NamedTuple) = ModelClosure(m, nt)
+(m::AbstractModel{A,B,M})(nt::NT) where {A,B,M,NT<:NamedTuple} = ModelClosure{Model{A,B,M}, NT}(m,nt)
 
 (mc::ModelClosure)(nt::NamedTuple) = ModelClosure(model(mc), merge(mc.argvals, nt))
 
@@ -36,5 +35,3 @@ obstype(::ModelClosure) = NamedTuple{(),Tuple{}}
 obstype(::Type{<:ModelClosure}) = NamedTuple{(),Tuple{}}
 
 type2model(::Type{MC}) where {M,MC<:ModelClosure{M}} = type2model(M)
-
-MeasureBase.condition(m::ModelClosure, nt::NamedTuple) = ModelPosterior(m, nt)

@@ -1,4 +1,3 @@
-
 export logdensityof
 
 using NestedTuples: lazymerge
@@ -6,47 +5,52 @@ import MeasureTheory
 
 using Accessors
 
+struct LogdensityConfig{F} <: AbstractTildeConfig
+    f::F
+end
+
+@inline retfun(cfg::LogdensityConfig{typeof(logdensityof)}, r, ctx) = ctx.ℓ
+@inline retfun(cfg::LogdensityConfig{typeof(unsafe_logdensityof)}, r, ctx) = ctx.ℓ
+
+
 @inline function MeasureBase.logdensityof(
-    cm::AbstractConditionalModel,
+    cm::AbstractConditionalModel{M,A,O},
     pars::NamedTuple;
-    cfg = NamedTuple(),
-    ctx = NamedTuple(),
-    retfun = (r, ctx) -> ctx.ℓ,
-)
+) where {M,A,O}
     # cfg = merge(cfg, (pars=pars,))
-    ctx = merge(ctx, (ℓ = 0.0,))
-    gg_call(logdensityof, cm, pars, cfg, ctx, retfun)
-end
-
-@inline function tilde(::typeof(logdensityof), lens, xname, x, d, cfg, ctx::NamedTuple)
-    x = x.value
-    insupport(d, lens(x)) || return (x, ctx, ReturnNow(-Inf))
-    @reset ctx.ℓ += MeasureBase.unsafe_logdensityof(d, lens(x))
-    (x, ctx, nothing)
-end
-
-@inline function MeasureBase.unsafe_logdensityof(
-    cm::AbstractConditionalModel,
-    pars::NamedTuple;
-    cfg = NamedTuple(),
-    ctx = NamedTuple(),
-    retfun = (r, ctx) -> ctx.ℓ,
-)
-    # cfg = merge(cfg, (pars=pars,))
-    ctx = merge(ctx, (ℓ = 0.0,))
-    gg_call(unsafe_logdensityof, cm, pars, cfg, ctx, retfun)
+    cfg = LogdensityConfig(logdensityof)
+    runmodel(cfg, cm, pars, (ℓ=0.0,))
 end
 
 @inline function tilde(
-    ::typeof(unsafe_logdensityof),
+    cfg::LogdensityConfig{typeof(logdensityof)},
+    x::MaybeObserved{X},
     lens,
-    xname,
-    x,
     d,
-    cfg,
     ctx::NamedTuple,
-)
-    x = x.value
+) where {X}
+    x = value(x)
+    insupport(d, lens(x)) || return (x, ctx, ReturnNow(-Inf))
     @reset ctx.ℓ += MeasureBase.unsafe_logdensityof(d, lens(x))
-    (x, ctx, ctx.ℓ)
+    (x, ctx)
+end
+
+@inline function MeasureBase.unsafe_logdensityof(
+    cm::AbstractConditionalModel{M,A,O},
+    pars::NamedTuple;
+) where {M,A,O}
+    cfg = LogdensityConfig(unsafe_logdensityof)
+    runmodel(cfg, cm, pars, (ℓ = 0.0,))
+end
+
+@inline function tilde(
+    cfg::LogdensityConfig{typeof(unsafe_logdensityof)},
+    x::MaybeObserved{X},
+    lens,
+    d,
+    ctx::NamedTuple,
+) where {X}
+    x = value(x)
+    @reset ctx.ℓ += MeasureBase.unsafe_logdensityof(d, lens(x))
+    (x, ctx)
 end
