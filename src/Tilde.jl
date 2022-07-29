@@ -81,6 +81,7 @@ include("callify.jl")
     end
 end
 
+include("fixedrng.jl")
 include("config.jl")
 include("lensvars.jl")
 include("optics.jl")

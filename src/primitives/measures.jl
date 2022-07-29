@@ -70,7 +70,7 @@ export measures
 end
 
 @inline function tilde(cfg::MeasuresConfig, x::Unobserved{X}, d, ctx) where {X}
-    x = testvalue(d)
+    x = rand(FixedRNG(), d)
     ctx = merge(ctx, NamedTuple{X}((d,)))
     (x, ctx)
 end
@@ -91,4 +91,4 @@ function as(mdl::AbstractConditionalModel)
     as(map(as, ms))
 end
 
-measures(m) = measures(m, testvalue(latentof(m)))
+measures(m) = measures(m, rand(FixedRNG(), m))
