@@ -5,7 +5,7 @@ import MeasureTheory
 
 using Accessors
 
-struct LogdensityConfig{F} <: AbstractTildeConfig
+struct LogdensityConfig{F} <: AbstractConfig
     f::F
 end
 

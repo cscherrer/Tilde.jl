@@ -1,7 +1,7 @@
 using Random: GLOBAL_RNG
 using TupleVectors: chainvec
 
-struct RandConfig{T_rng, RNG} <: AbstractTildeConfig
+struct RandConfig{T_rng, RNG} <: AbstractConfig
     rng::RNG
 
     RandConfig(::Type{T_rng}, rng::RNG) where {T_rng, RNG<:AbstractRNG} = new{T_rng,RNG}(rng)

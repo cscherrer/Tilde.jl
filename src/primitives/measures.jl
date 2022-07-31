@@ -42,7 +42,7 @@
 #      Normal(μ = -3.75905,)
 # """
 
-struct MeasuresConfig{P} <: AbstractTildeConfig
+struct MeasuresConfig{P} <: AbstractConfig
     pars::P
 end
 

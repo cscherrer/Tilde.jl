@@ -1,7 +1,7 @@
 using TupleVectors: chainvec
 import MeasureTheory: testvalue
 
-struct TestValueConfig{P} <: AbstractTildeConfig
+struct TestValueConfig{P} <: AbstractConfig
     proj::P
 end
 
