@@ -1,2 +1,2 @@
-abstract type AbstractTildeConfig end
+abstract type AbstractConfig end
 

@@ -2,7 +2,7 @@ using Random: GLOBAL_RNG, AbstractRNG
 using TupleVectors
 export predict
 
-struct PredictConfig{T_rng, RNG,P} <: AbstractTildeConfig
+struct PredictConfig{T_rng, RNG,P} <: AbstractConfig
     rng::RNG
     pars::P
     PredictConfig(::Type{T_rng}, rng::RNG, pars::P) where {T_rng, RNG<:AbstractRNG,P} = new{T_rng,RNG,P}(rng,pars)
@@ -16,7 +16,7 @@ PredictConfig(::Type{T_rng}) where {T_rng} = PredictConfig(T_rng, GLOBAL_RNG, Na
 PredictConfig(rng::AbstractRNG) = PredictConfig(Float64, rng, NamedTuple())
 PredictConfig(pars) = PredictConfig(Float64, GLOBAL_RNG, pars)
 
-PredictConfig() where {T_rng} = PredictConfig(Float64, GLOBAL_RNG, NamedTuple())
+PredictConfig() = PredictConfig(Float64, GLOBAL_RNG, NamedTuple())
 
 retfun(::PredictConfig, r, ctx) = r
 

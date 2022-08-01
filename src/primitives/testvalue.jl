@@ -1,8 +1,7 @@
 using TupleVectors: chainvec
 import MeasureTheory: testvalue
 
-struct TestValueConfig{P} <: AbstractTildeConfig
-    proj::P
+struct TestValueConfig <: AbstractConfig
 end
 
 @inline retfun(cfg::TestValueConfig, r, ctx) = r
@@ -12,7 +11,7 @@ export testvalue
 EmptyNTtype = NamedTuple{(),Tuple{}} where {T<:Tuple}
 
 @inline function testvalue(mc::AbstractConditionalModel)
-    cfg = TestValueConfig(getproj(mc))
+    cfg = TestValueConfig()
     ctx = NamedTuple()
     runmodel(cfg, mc, NamedTuple(), ctx)
 end

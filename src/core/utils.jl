@@ -168,9 +168,9 @@ allequal(xs) = all(xs[1] .== xs)
 # names
 
 function loadvals(argstype, obstype, parstype)
-    args = schema(argstype)
-    data = schema(obstype)
-    pars = schema(parstype)
+    args = schema_shallow(argstype)
+    data = schema_shallow(obstype)
+    pars = schema_shallow(parstype)
 
     loader = @q begin end
 
@@ -191,19 +191,19 @@ function loadvals(argstype, obstype, parstype)
         push!(loader.args, :($k::$T = _pars.$k))
     end
 
-    for k in keys(pars) ∩ keys(data)
-        qk = QuoteNode(k)
-        if typejoin(getproperty(pars, k), getproperty(data, k)) <: NamedTuple
-            push!(loader.args, :($k = Tilde.NestedTuples.lazymerge(_obs.$k, _pars.$k)))
-        else
-            T = getproperty(pars, k)
-            push!(loader.args, quote
-                _k = $qk
-                @warn "Duplicate key, ignoring $_k in data"
-                $k::$T = _pars.$k
-            end)
-        end
-    end
+    # for k in keys(pars) ∩ keys(data)
+    #     qk = QuoteNode(k)
+    #     if typejoin(getproperty(pars, k), getproperty(data, k)) <: NamedTuple
+    #         push!(loader.args, :($k = Tilde.NestedTuples.lazymerge(_obs.$k, _pars.$k)))
+    #     else
+    #         T = getproperty(pars, k)
+    #         push!(loader.args, quote
+    #             _k = $qk
+    #             @warn "Duplicate key, ignoring $_k in data"
+    #             $k::$T = _pars.$k
+    #         end)
+    #     end
+    # end
 
     src -> (@q begin
         $loader
@@ -224,19 +224,30 @@ end
 
 const TypeLevel = GG.TypeLevel
 
-export drop_return
+export dropreturn
 
-function drop_return(m::Model)
-    Model(getmodule(m), arguments(m), drop_return(body(m)))
+function dropreturn(m::Model)
+    Model(getmodule(m), arguments(m), dropreturn(body(m)))
 end
 
-function drop_return(ast)
+function dropreturn(ast)
     leaf(x) = x
     function branch(f, head, args)
-        head === :return && return nothing
+        head === :return && return quote end
         return Expr(head, map(f, args)...)
-    end
-    foldast(leaf, branch)(ast)
+    end 
+    foldast(leaf, branch)(ast) |> MacroTools.flatten
+end
+
+export setreturn
+
+function setreturn(m::Model, expr)
+    Model(getmodule(m), arguments(m), setreturn(dropreturn(body(m)), expr))
+end
+
+function setreturn(ast, expr)
+    ast = copy(ast)
+    push!(ast.args, expr)
 end
 
 export unVal

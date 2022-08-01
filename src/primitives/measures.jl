@@ -42,7 +42,7 @@
 #      Normal(μ = -3.75905,)
 # """
 
-struct MeasuresConfig{P} <: AbstractTildeConfig
+struct MeasuresConfig{P} <: AbstractConfig
     pars::P
 end
 
@@ -61,7 +61,7 @@ export measures
     cfg=  MeasuresConfig(pars)
     ctx = rmap(sim, pars)
 
-    nt = runmodel(cfg, latentof(m), pars, ctx)
+    nt = runmodel(cfg, m, pars, ctx)
 
     f(x::AbstractArray) = productmeasure(narrow_array(x))
     f(x) = x
@@ -83,6 +83,7 @@ end
 end
 
 @inline function tilde(cfg::MeasuresConfig, x::Observed{X}, lens, d, ctx) where {X}
+    @show X
     (value(x), ctx)
 end
 
@@ -91,4 +92,5 @@ function as(mdl::AbstractConditionalModel)
     as(map(as, ms))
 end
 
-measures(m) = measures(m, rand(FixedRNG(), m))
+measures(m::ModelClosure) = measures(m, rand(FixedRNG(), m))
+measures(m::ModelPosterior) = measures(m, rand(FixedRNG(), m.closure))
