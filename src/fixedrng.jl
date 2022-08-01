@@ -1,4 +1,9 @@
+export FixedRNG
 struct FixedRNG <: AbstractRNG end
+
+Base.rand(::FixedRNG) = one(Float64) / 2
+Random.randn(::FixedRNG) = zero(Float64)
+Random.randexp(::FixedRNG) = one(Float64)
 
 Base.rand(::FixedRNG, ::Type{T}) where {T<:Real} = one(T) / 2
 Random.randn(::FixedRNG, ::Type{T}) where {T<:Real} = zero(T)
