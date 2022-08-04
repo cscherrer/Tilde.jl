@@ -40,6 +40,8 @@ end
 ###############################################################################
 # `predict` for forward random sampling
 
+predict(d, pars) = pars
+
 @inline function predict(rng::AbstractRNG, m::AbstractConditionalModel, pars::NamedTuple)
     predict_rand(rng::AbstractRNG, m::AbstractConditionalModel, pars)
 end

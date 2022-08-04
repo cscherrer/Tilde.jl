@@ -48,9 +48,9 @@ include("examples-list.jl")
         end
 
         x = rand(outer(sub=inner)).m
-        post = outer(sub=inner) | (m = (x=x,),)
+        post = outer(sub=inner) | (m = x,)
         t = as(post)
-        @test logdensity_def(post, transform(t, randn(3))) isa Real
+        @test logdensityof(post, transform(t, randn(2))) isa Real
     end
 
     @testset "Predict" begin

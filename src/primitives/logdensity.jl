@@ -19,7 +19,7 @@ end
 ) where {M,A,O}
     # cfg = merge(cfg, (pars=pars,))
     cfg = LogdensityConfig(logdensityof)
-    runmodel(cfg, cm, pars, (ℓ=0.0,))
+    runmodel(cfg, cm, pars, (ℓ=false,))
 end
 
 @inline function tilde(
@@ -30,9 +30,10 @@ end
     ctx::NamedTuple,
 ) where {X}
     x = value(x)
-    insupport(d, lens(x)) || return (x, ctx, ReturnNow(-Inf))
-    @reset ctx.ℓ += MeasureBase.unsafe_logdensityof(d, lens(x))
-    (x, ctx)
+    # insupport(d, lens(x)) || return (x, ReturnNow(-Inf))
+    pred = predict(d, lens(x))
+    @reset ctx.ℓ += logdensityof(d, lens(x))
+    (pred, ctx)
 end
 
 @inline function MeasureBase.unsafe_logdensityof(
@@ -51,6 +52,8 @@ end
     ctx::NamedTuple,
 ) where {X}
     x = value(x)
-    @reset ctx.ℓ += MeasureBase.unsafe_logdensityof(d, lens(x))
-    (x, ctx)
+    # insupport(d, lens(x)) || return (x, ReturnNow(-Inf))
+    pred = predict(d, lens(x))
+    @reset ctx.ℓ += unsafe_logdensityof(d, lens(x))
+    (pred, ctx)
 end

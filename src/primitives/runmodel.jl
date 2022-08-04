@@ -4,6 +4,10 @@ export runmodel
     return s ∈ N
 end
 
+@inline function inkeys(::StaticSymbol{s}, ::NamedTuple{N,T}) where {s,N,T}
+    return s ∈ N
+end
+
 function make_body(M, f, m::AbstractModel)
     make_body(M, body(m))
 end
@@ -32,25 +36,22 @@ function make_body(M, ast::Expr, argsT, obsT, parsT)
                 # X = to_type(unsolved_lhs)
                 # M = to_type(unsolve(rhs))
 
-                # inargs = inkeys(sx, argsT)
-                inobs = inkeys(sx, obsT)
-                # inpars = inkeys(sx, parsT)
                 rhs = unsolve(rhs)
                     
-                obj = if inobs
+                obj = if inkeys(sx, argsT)
+                    :(Unobserved{$qx}(_args.$x))
+                elseif inkeys(sx, obsT)
                     # TODO: Even if `x` is observed, we may have `lens(x) == missing`
-                    :($Observed{$qx}($x))
+                    :($Observed{$qx}(_obs.$x))
+                elseif inkeys(sx, parsT)
+                    :($Unobserved{$qx}(_pars.$x))
                 else
-                    (if x ∈ knownvars
-                        :($Unobserved{$qx}($x))
-                    else
-                        :($Unobserved{$qx}(missing))
-                    end)
+                    :($Unobserved{$qx}(missing))
                 end
                 
                 q = quote
                     ($x, _ctx) = $tilde(_cfg, $obj, $l, $rhs, _ctx)
-                    _ctx isa Tilde.ReturnNow && return _ctx.value
+                    # _ctx isa Tilde.ReturnNow && return _ctx.value
                 end
 
                 q
@@ -106,10 +107,13 @@ end
     obsT = obstype(MC)
     parsT = NamedTuple{N,T}
 
-    body = _m.body |> loadvals(argsT, obsT, parsT)
+    body = _m.body  |> loadvals(argsT)
 
     paramnames = tuple(parameters(_m)...)
     paramvals = Expr(:tuple, paramnames...) 
+    argsT = schema(argsT)
+    obsT = schema(obsT)
+    parsT = schema(parsT)
     body = make_body(M, body, argsT, obsT, parsT)
 
     q = MacroTools.flatten(

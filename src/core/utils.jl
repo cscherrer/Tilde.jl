@@ -167,6 +167,41 @@ allequal(xs) = all(xs[1] .== xs)
 # @__MODULE__
 # names
 
+
+
+function loadvals(argstype)
+    args = schema_shallow(argstype)
+   
+    loader = @q begin end
+
+    for k in keys(args)
+        push!(loader.args, :(local $k))
+        T = getproperty(args, k)
+        push!(loader.args, :($k::$T = _args.$k))
+    end
+
+
+    # for k in keys(pars) ∩ keys(data)
+    #     qk = QuoteNode(k)
+    #     if typejoin(getproperty(pars, k), getproperty(data, k)) <: NamedTuple
+    #         push!(loader.args, :($k = Tilde.NestedTuples.lazymerge(_obs.$k, _pars.$k)))
+    #     else
+    #         T = getproperty(pars, k)
+    #         push!(loader.args, quote
+    #             _k = $qk
+    #             @warn "Duplicate key, ignoring $_k in data"
+    #             $k::$T = _pars.$k
+    #         end)
+    #     end
+    # end
+
+    src -> (@q begin
+        $loader
+        $src
+    end) |> MacroTools.flatten
+end
+
+
 function loadvals(argstype, obstype, parstype)
     args = schema_shallow(argstype)
     data = schema_shallow(obstype)

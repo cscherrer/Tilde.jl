@@ -60,7 +60,6 @@ export measures
 
     cfg=  MeasuresConfig(pars)
     ctx = rmap(sim, pars)
-
     nt = runmodel(cfg, m, pars, ctx)
 
     f(x::AbstractArray) = productmeasure(narrow_array(x))
@@ -69,11 +68,11 @@ export measures
     rmap(f, nt)
 end
 
-@inline function tilde(cfg::MeasuresConfig, x::Unobserved{X}, d, ctx) where {X}
-    x = rand(FixedRNG(), d)
-    ctx = merge(ctx, NamedTuple{X}((d,)))
-    (x, ctx)
-end
+# @inline function tilde(cfg::MeasuresConfig, x::Unobserved{X}, d, ctx) where {X}
+#     x = rand(FixedRNG(), d)
+#     ctx = merge(ctx, NamedTuple{X}((d,)))
+#     (x, ctx)
+# end
 
 @inline function tilde(cfg::MeasuresConfig, x::Unobserved{X}, lens, d, ctx) where {X}
     ctx = set(ctx, PropertyLens{X}() ⨟ Lens!!(lens), d)
@@ -83,8 +82,10 @@ end
 end
 
 @inline function tilde(cfg::MeasuresConfig, x::Observed{X}, lens, d, ctx) where {X}
-    @show X
-    (value(x), ctx)
+    x = value(x)
+
+    ctx = set(ctx, PropertyLens{X}() ⨟ Lens!!(lens), measures(d | lens(x)))
+    (lens(x), ctx)
 end
 
 function as(mdl::AbstractConditionalModel)
@@ -92,5 +93,17 @@ function as(mdl::AbstractConditionalModel)
     as(map(as, ms))
 end
 
+function as(nt::NamedTuple) 
+    as(map(as, nt))
+end
+
+as(transformations::NamedTuple{N,<:TV.NTransforms}) where N =
+    TV.TransformTuple(transformations)
+
 measures(m::ModelClosure) = measures(m, rand(FixedRNG(), m))
 measures(m::ModelPosterior) = measures(m, rand(FixedRNG(), m.closure))
+
+# Base.:|(m::AbstractMeasure, x) = Dirac(x)
+measures(m::AbstractMeasure) = m
+
+measures(m::MeasureBase.ConditionalMeasure) = Dirac(m.constraint)
