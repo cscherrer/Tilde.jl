@@ -15,6 +15,7 @@ import DensityInterface: densityof
 import DensityInterface: DensityKind
 using DensityInterface
 
+using DistributionMeasures
 using NamedTupleTools
 using SampleChains
 # using SymbolicCodegen

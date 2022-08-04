@@ -63,16 +63,6 @@ end
     (predict(d, xnew), ctx′)
 end
 
-# Distributions doesn't currently have a way to specify the type
-@inline function tilde(
-    cfg::RandConfig{T_rng, RNG},
-    x::Unobserved{X},
-    lens,
-    d::Dists.Distribution,
-    ctx,
-) where {X,T_rng, RNG}
-    tilde(cfg, x, lens, AbstractMeasure(d), ctx)
-end
 
 ###############################################################################
 # Dispatch helpers
