@@ -50,7 +50,7 @@ function make_body(M, ast::Expr, argsT, obsT, parsT)
                 end
                 
                 q = quote
-                    ($x, _ctx) = $tilde(_cfg, $obj, $l, $rhs, _ctx)
+                    ($x, _ctx) = $tilde(_cfg, $obj, $l, AbstractMeasure($rhs), _ctx)
                     # _ctx isa Tilde.ReturnNow && return _ctx.value
                 end
 
