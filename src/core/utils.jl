@@ -141,21 +141,6 @@ allequal(xs) = all(xs[1] .== xs)
 # # julia> as((;s=as(Array, as𝕀,4), a=asℝ))(randn(5))
 # # (s = [0.545324, 0.281332, 0.418541, 0.485946], a = 2.217762640580984)
 
-# From https://github.com/thautwarm/MLStyle.jl/issues/66
-# @active LamExpr(x) begin
-#            @match x begin
-#                :($a -> begin $(bs...) end) =>
-#                  let exprs = filter(x -> !(x isa LineNumberNode), bs)
-#                    if length(exprs) == 1
-#                      (a, exprs[1])
-#                    else
-#                      (a, Expr(:block, bs...))
-#                      end
-#                end
-#                 _  => nothing
-#            end
-#        end
-
 # using BenchmarkTools
 # f(;kwargs...) = kwargs[:a] + kwargs[:b]
 
