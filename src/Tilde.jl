@@ -31,7 +31,6 @@ import MLStyle
 # using MonteCarloMeasurements: Particles, StaticParticles, AbstractParticles
 
 using Requires
-using ArrayInterface: StaticInt
 using Static
 
 using IfElse: ifelse
