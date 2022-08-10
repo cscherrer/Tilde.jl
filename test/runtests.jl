@@ -79,7 +79,7 @@ include("examples-list.jl")
 
         mm = m2(m=m1())
         
-        @test as(mm|(y=1.0,)) isa TransformVariables.TransformTuple
+        @test as(mm|(y=1.0,)) isa TV.TransformTuple
         @test basemeasure(mm | (y=1.0,)) isa ProductMeasure
         @test testvalue(mm) isa NamedTuple
     end
@@ -100,7 +100,10 @@ include("examples-list.jl")
         
         mm = m2(m=m1())
 
-        @test as(mm|(;y=1.0,)) isa TransformVariables.TransformTuple
+        post = mm|(;y=1.0,)
+        t = as(post)
+        @test t isa TV.TransformTuple
+        @test logdensityof(post, TV.transform(t, randn(t.dimension))) isa Real
         @test basemeasure(mm | (y=1.0,)) isa ProductMeasure
         @test testvalue(mm) isa NamedTuple
     end
@@ -111,17 +114,6 @@ include("examples-list.jl")
         end;
         
         @test logdensityof(m(), rand(m())) isa Float64
-    end
-
-    @testset "Local variables" begin
-        # https://github.com/cscherrer/Soss.jl/issues/253
-
-        m = @model begin
-            a ~ For(3) do x Normal(μ=x) end
-            x ~ Normal(μ=sum(a))
-        end
-
-        @test digraph(m).N == Dict(:a => Set([:x]), :x => Set())
     end
 
     @testset "Doctests" begin
@@ -143,7 +135,7 @@ include("examples-list.jl")
 
         @test transform(as(post), randn(6)) isa NamedTuple
 
-        @testset "logdensity" begin
+        @testset "logdensityof" begin
             dat = randn(100)
             m = Tilde.@model n begin
                 μ ~ Dists.Normal()
@@ -154,7 +146,8 @@ include("examples-list.jl")
             mod = m( (; n = length(dat) ) )
             post = mod | (data = dat,)
 
-            @test logdensity_def( mod( (μ = 1., σ = 2., data = dat) ) ) == logdensity_def( post( (μ = 1., σ = 2.) ) )
+
+            @test logdensityof(mod, (μ = 1., σ = 2., data = dat ) ) == logdensityof( post, (μ = 1., σ = 2.) )
         end
 
 
@@ -170,36 +163,29 @@ include("examples-list.jl")
         base = basemeasure(post)
         @test logdensity_def(base, (p=0.2,)) isa Real
     end
-end
 
-
-
-
-
-
-@testset "Nested models" begin
-    m = @model begin
-        params ~ @model begin
+    @testset "Nested models" begin
+        m = @model begin
+            params ~ (@model begin
+                p ~ Uniform()
+                end)()
+            obs = @model params begin
+                x ~ Bernoulli(params.p)
+                end
+            data ~ obs(params=params)
+        end
+    
+        @test logdensityof(m(), rand(m())) isa Float64
+    end
+    
+    @testset "rand" begin
+        m = @model begin
             p ~ Uniform()
-            end
-        obs = @model params begin
-            x ~ Bernoulli(params.p)
-            end
-        data ~ obs(params=params)
+            x ~ Bernoulli(p)
+        end
+    
+        @test rand(m()).x isa Bool
+        @test logdensityof(m(), rand(m())) isa Float64
     end
-
-    @test logdensity(m(), rand(m())) isa Float64
-end
-
-
-@testset "rand" begin
-    m = @model begin
-        p ~ Uniform()
-        x ~ Bernoulli(p)
-    end
-
-    @test rand(m(); ctx=()) isa Bool
-    @test logdensity(m(), rand(m())) isa Float64
-end
 
 end

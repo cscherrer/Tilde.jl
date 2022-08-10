@@ -161,3 +161,51 @@ function Base.rand(
 )
     @error "`rand` called on ModelPosterior. `rand` does not allow conditioning; try `predict`"
 end
+
+###############################################################################
+# Internal method allowing `ModelPosterior` 
+
+@inline function _rand(
+    rng::AbstractRNG,
+    ::Type{T_rng},
+    d) where {T_rng}
+    return rand(rng, T_rng, d)
+end
+
+@inline function _rand(
+    rng::AbstractRNG,
+    ::Type{T_rng},
+    mc::AbstractConditionalModel
+) where {T_rng}
+    cfg = RandConfig(T_rng, rng)
+    pars = NamedTuple()
+    ctx = NamedTuple()
+    runmodel(cfg, anyfy(mc), pars, ctx)
+end
+
+
+@inline function tilde(
+    cfg::RandConfig{T_rng, RNG},
+    obj::Observed{X},
+    lens,
+    d,
+    ctx,
+) where {X,T_rng, RNG}
+    r = _rand(cfg.rng, T_rng, d)
+    x = value(obj)
+    xj = lens(x)
+    # TODO: account for cases where `xj == missing`
+    (x, ctx)
+end
+
+@inline function _rand(m::AbstractConditionalModel; kwargs...)
+    _rand(GLOBAL_RNG, Float64, m; kwargs...)
+end
+
+@inline function _rand(rng::AbstractRNG, m::AbstractConditionalModel; kwargs...)
+    _rand(rng, Float64, m; kwargs...)
+end
+
+@inline function _rand(::Type{T_rng}, m::AbstractConditionalModel; kwargs...) where {T_rng}
+    _rand(GLOBAL_RNG, T_rng, m; kwargs...)
+end

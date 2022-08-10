@@ -38,11 +38,11 @@ function make_body(M, ast::Expr, argsT, obsT, parsT)
 
                 rhs = unsolve(rhs)
                     
-                obj = if inkeys(sx, argsT)
-                    :(Unobserved{$qx}(_args.$x))
-                elseif inkeys(sx, obsT)
+                obj = if inkeys(sx, obsT)
                     # TODO: Even if `x` is observed, we may have `lens(x) == missing`
                     :($Observed{$qx}(_obs.$x))
+                elseif inkeys(sx, argsT)
+                    :(Unobserved{$qx}(_args.$x))
                 elseif inkeys(sx, parsT)
                     :($Unobserved{$qx}(_pars.$x))
                 else
