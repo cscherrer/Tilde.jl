@@ -8,8 +8,6 @@ using Reexport: @reexport
 @reexport using MeasureTheory
 using MeasureBase: productmeasure, Returns
 
-import MeasureBase: latentof, jointof, manifestof
-
 import DensityInterface: logdensityof
 import DensityInterface: densityof
 import DensityInterface: DensityKind
