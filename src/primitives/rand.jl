@@ -67,18 +67,29 @@ end
 ###############################################################################
 # Dispatch helpers
 
-@inline function Base.rand(m::ModelClosure, args...; kwargs...)
-    rand(GLOBAL_RNG, Float64, m, args...; kwargs...)
+@inline function Base.rand(m::ModelClosure; kwargs...)
+    rand(GLOBAL_RNG, Float64, m; kwargs...)
 end
 
-@inline function Base.rand(rng::AbstractRNG, m::ModelClosure, args...; kwargs...)
-    rand(rng, Float64, m, args...; kwargs...)
+@inline function Base.rand(rng::AbstractRNG, m::ModelClosure; kwargs...)
+    rand(rng, Float64, m; kwargs...)
 end
 
-@inline function Base.rand(::Type{T_rng}, m::ModelClosure, args...; kwargs...) where {T_rng}
-    rand(GLOBAL_RNG, T_rng, m, args...; kwargs...)
+@inline function Base.rand(::Type{T_rng}, m::ModelClosure; kwargs...) where {T_rng}
+    rand(GLOBAL_RNG, T_rng, m; kwargs...)
 end
 
+@inline function Base.rand(m::ModelClosure, N; kwargs...)
+    rand(GLOBAL_RNG, Float64, m, N; kwargs...)
+end
+
+@inline function Base.rand(rng::AbstractRNG, m::ModelClosure, N; kwargs...)
+    rand(rng, Float64, m, N; kwargs...)
+end
+
+@inline function Base.rand(::Type{T_rng}, m::ModelClosure, N; kwargs...) where {T_rng}
+    rand(GLOBAL_RNG, T_rng, m, N; kwargs...)
+end
 
 ###############################################################################
 # Specifying an Integer argument creates a TupleVector
