@@ -270,17 +270,6 @@ function setreturn(ast, expr)
     push!(ast.args, expr)
 end
 
-export unVal
-export val2nt
-
-unVal(::Type{V}) where {T,V<:Val{T}} = T
-unVal(::Val{T}) where {T} = T
-
-function val2nt(v, x)
-    k = Tilde.unVal(v)
-    NamedTuple{(k,)}((x,))
-end
-
 function detilde(ast)
     q = MLStyle.@match ast begin
         :($x ~ $rhs)        => :($x = __SAMPLE__($rhs))
