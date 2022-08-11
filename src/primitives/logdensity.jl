@@ -17,9 +17,8 @@ end
     cm::AbstractConditionalModel{M,A,O},
     pars::NamedTuple;
 ) where {M,A,O}
-    # cfg = merge(cfg, (pars=pars,))
     cfg = LogdensityConfig(logdensityof)
-    runmodel(cfg, cm, pars, (ℓ=false,))
+    runmodel(cfg, cm, pars, (ℓ=0,))
 end
 
 @inline function tilde(
@@ -41,7 +40,7 @@ end
     pars::NamedTuple;
 ) where {M,A,O}
     cfg = LogdensityConfig(unsafe_logdensityof)
-    runmodel(cfg, cm, pars, (ℓ = 0.0,))
+    runmodel(cfg, cm, pars, (ℓ = 0,))
 end
 
 @inline function tilde(
