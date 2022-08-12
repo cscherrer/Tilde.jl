@@ -160,9 +160,8 @@ function loadvals(argstype)
     loader = @q begin end
 
     for k in keys(args)
-        push!(loader.args, :(local $k))
         T = getproperty(args, k)
-        push!(loader.args, :($k::$T = _args.$k))
+        push!(loader.args, :(local $k::$T = _args.$k))
     end
 
 
