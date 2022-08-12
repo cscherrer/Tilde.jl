@@ -57,11 +57,12 @@ end
     d,
     ctx,
 ) where {Z,T_rng, RNG}
+    rng = cfg.rng
     z = value(z_obs)
-    zj = rand(cfg.rng, T_rng, d)
+    zj = rand(rng, T_rng, d)
     new_z = set(z, Lens!!(lens), zj)
     ctx′ = mymerge(ctx, NamedTuple{(Z,)}((new_z,)))
-    xj = predict(d, zj)
+    xj = predict(rng, d, zj)
     (xj, ctx′)
 end
 
@@ -204,11 +205,13 @@ end
     d,
     ctx,
 ) where {Z,T_rng, RNG}
-    r = _rand(cfg.rng, T_rng, d)
-    x = value(z_obs)
-    xj = lens(x)
+    rng = cfg.rng
+    r = _rand(rng, T_rng, d)
+    z = value(z_obs)
+    zj = lens(z)
+    xj = predict(rng, d, zj)
     # TODO: account for cases where `xj == missing`
-    (x, ctx)
+    (xj, ctx)
 end
 
 @inline function _rand(m::AbstractConditionalModel; kwargs...)

@@ -15,8 +15,8 @@ end
 
 @inline function MeasureBase.logdensityof(
     cm::AbstractConditionalModel{M,A,O},
-    pars::NamedTuple;
-) where {M,A,O}
+    pars::NamedTuple{N,T};
+) where {M,A,O,N,T}
     cfg = LogdensityConfig(logdensityof)
     runmodel(cfg, cm, pars, (ℓ=0,))
 end

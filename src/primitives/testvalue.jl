@@ -32,7 +32,7 @@ testvalue(m::AbstractConditionalModel) = _rand(FixedRNG(), m)
 #     @show zj
 #     new_z = set(z, Lens!!(lens), zj)
 #     ctx′ = merge(ctx, NamedTuple{(Z,)}((new_z,)))
-#     xj = predict(d, zj)
+#     xj = predict(rng, d, zj)
 #     (xj, ctx′)
 # end
 
@@ -45,6 +45,6 @@ testvalue(m::AbstractConditionalModel) = _rand(FixedRNG(), m)
 # ) where {Z}
 #     z = value(z_obs)
 #     zj = lens(z)
-#     xj = predict(d, zj)
+#     xj = predict(rng, d, zj)
 #     (xj, ctx)
 # end

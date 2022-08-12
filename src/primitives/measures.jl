@@ -78,14 +78,14 @@ end
     ctx = set(ctx, PropertyLens{Z}() ⨟ Lens!!(lens), d)
     z = value(z_obs)
     zj = lens(z)
-    xj = predict(d, zj)
+    xj = predict(FixedRNG(), d, zj)
     (xj, ctx)
 end
 
 @inline function tilde(cfg::MeasuresConfig, z_obs::Observed{Z}, lens, d, ctx) where {Z}
     z = value(z_obs)
     zj = lens(z)
-    xj = predict(d, zj)
+    xj = predict(FixedRNG(), d, zj)
 
     ctx = set(ctx, PropertyLens{Z}() ⨟ Lens!!(lens), measures(d | zj))
     (xj, ctx)

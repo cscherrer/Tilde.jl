@@ -26,7 +26,7 @@ model(c::ModelClosure) = c.model
 
 (m::AbstractModel{A,B,M})(nt::NT) where {A,B,M,NT<:NamedTuple} = ModelClosure{Model{A,B,M}, NT}(m,nt)
 
-(mc::ModelClosure)(nt::NamedTuple) = ModelClosure(model(mc), merge(mc.argvals, nt))
+(mc::ModelClosure)(nt::NamedTuple) = ModelClosure(model(mc), mymerge(mc.argvals, nt))
 
 argvalstype(mc::ModelClosure{M,A}) where {M,A} = A
 argvalstype(::Type{MC}) where {M,A,MC<:ModelClosure{M,A}} = A

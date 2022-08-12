@@ -40,7 +40,11 @@ end
 ###############################################################################
 # `predict` for forward random sampling
 
+predict(::AbstractRNG, d::AbstractMeasure, pars) = pars
+
 predict(d::AbstractMeasure, pars) = pars
+
+predict(rng::AbstractRNG, m::AbstractMeasure) = rand(rng, m)
 
 @inline function predict(rng::AbstractRNG, m::AbstractConditionalModel, pars::NamedTuple)
     predict_rand(rng::AbstractRNG, m::AbstractConditionalModel, pars)
@@ -69,22 +73,16 @@ end
 ) where {Z,N}
     if Z ∈ N
         quote
-            # @info "$X ∈ N"
-            z = value(z_obs)
+            # @info "$Z ∈ N"
+            z = getproperty(pars, Z)
             zj = lens(z)
-            xj = predict(d, zj)
-            xnew = set(z, Lens!!(lens), lens(getproperty(pars, Z)))
-            # ctx = merge(ctx, NamedTuple{(X,)}((xnew,)))
+            xj = predict(rng, d, zj)
             (xj, ctx)
         end
     else
         quote
-            # @info "$X ∉ N"
-            z = value(z_obs)
-            zj = predict(rng, d)
-            new_z = set(z, Lens!!(lens), zj)
-            xj = predict(d, zj)
-            ctx = merge(ctx, NamedTuple{(Z,)}((new_z,)))
+            # @info "$Z ∉ N"
+            xj = predict(rng, d)
             (xj, ctx)
         end
     end
@@ -93,28 +91,28 @@ end
 
 ###############################################################################
 
+# TODO: Come back to this ↓
 
+# @inline function predict(f, m::AbstractConditionalModel, pars::NamedTuple)
+#     m = anyfy(m)
+#     pars = rmap(anyfy, pars) 
+#     cfg = (f = f, pars = pars)
+#     ctx = NamedTuple()
+#     runmodel(predict, m, pars, cfg, ctx, (r, ctx) -> r)
+# end
 
-@inline function predict(f, m::AbstractConditionalModel, pars::NamedTuple)
-    m = anyfy(m)
-    pars = rmap(anyfy, pars) 
-    cfg = (f = f, pars = pars)
-    ctx = NamedTuple()
-    runmodel(predict, m, pars, cfg, ctx, (r, ctx) -> r)
-end
+# @inline function predict(f, m::AbstractConditionalModel, tv::TupleVector)
+#     n = length(tv)
+#     @inbounds result = chainvec(predict(f, m, tv[1]), n)
+#     @inbounds for j in 2:n
+#         result[j] = predict(f, m, tv[j])
+#     end
+#     return result
+# end
 
-@inline function predict(f, m::AbstractConditionalModel, tv::TupleVector)
-    n = length(tv)
-    @inbounds result = chainvec(predict(f, m, tv[1]), n)
-    @inbounds for j in 2:n
-        result[j] = predict(f, m, tv[j])
-    end
-    return result
-end
-
-@inline function tilde(::typeof(predict), x, lens, d, cfg, ctx)
-    tilde_predict(cfg.f, x, lens, d, cfg.pars, ctx)
-end
+# @inline function tilde(::typeof(predict), x, lens, d, cfg, ctx)
+#     tilde_predict(cfg.f, x, lens, d, cfg.pars, ctx)
+# end
 
 # @generated function tilde_predict(
 #     f,
@@ -191,8 +189,3 @@ end
 @inline function predict(rng::AbstractRNG, m::AbstractConditionalModel)
     predict_rand(rng, m, NamedTuple())
 end
-
-function predict(args...)
-    rand(args...)
-end
-
