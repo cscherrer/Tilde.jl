@@ -85,7 +85,7 @@ end
     x = value(x)
 
     ctx = set(ctx, PropertyLens{X}() ⨟ Lens!!(lens), measures(d | lens(x)))
-    (lens(x), ctx)
+    (x, ctx)
 end
 
 function as(mdl::AbstractConditionalModel)
