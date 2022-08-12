@@ -44,7 +44,7 @@ space_. That is, any return value in the model is ignored by `rand`. Use
     cfg = RandConfig(T_rng, rng)
     pars = NamedTuple()
     ctx = NamedTuple()
-    runmodel(cfg, anyfy(mc), pars, ctx)
+    runmodel(cfg, mc, pars, ctx)
 end
 
 ###############################################################################
@@ -191,7 +191,7 @@ end
     cfg = RandConfig(T_rng, rng)
     pars = NamedTuple()
     ctx = NamedTuple()
-    runmodel(cfg, anyfy(mc), pars, ctx)
+    runmodel(cfg, mc, pars, ctx)
 end
 
 
