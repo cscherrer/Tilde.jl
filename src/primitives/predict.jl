@@ -61,25 +61,31 @@ end
 
 @generated function tilde_predict(
     rng,
-    x::MaybeObserved{X},
+    z_obs::MaybeObserved{Z},
     lens,
     d,
     pars::NamedTuple{N},
     ctx,
-) where {X,N}
-    if X ∈ N
+) where {Z,N}
+    if Z ∈ N
         quote
             # @info "$X ∈ N"
-            xnew = set(value(x), Lens!!(lens), lens(getproperty(pars, X)))
+            z = value(z_obs)
+            zj = lens(z)
+            xj = predict(d, zj)
+            xnew = set(z, Lens!!(lens), lens(getproperty(pars, Z)))
             # ctx = merge(ctx, NamedTuple{(X,)}((xnew,)))
-            (xnew, ctx)
+            (xj, ctx)
         end
     else
         quote
             # @info "$X ∉ N"
-            xnew = set(value(x), Lens!!(lens), predict(rng, d))
-            ctx = merge(ctx, NamedTuple{(X,)}((xnew,)))
-            (xnew, ctx)
+            z = value(z_obs)
+            zj = predict(rng, d)
+            new_z = set(z, Lens!!(lens), zj)
+            xj = predict(d, zj)
+            ctx = merge(ctx, NamedTuple{(Z,)}((new_z,)))
+            (xj, ctx)
         end
     end
 end
@@ -112,12 +118,12 @@ end
 
 # @generated function tilde_predict(
 #     f,
-#     x::Observed{X},
+#     z::Observed{Z},
 #     lens,
 #     d,
 #     pars::NamedTuple{N},
 #     ctx,
-# ) where {X,N}
+# ) where {Z,N}
 #     if X ∈ N
 #         quote
 #             # @info "$X ∈ N"
@@ -138,12 +144,12 @@ end
 
 # @generated function tilde_predict(
 #     f,
-#     x::Unobserved{X},
+#     z::Unobserved{Z},
 #     lens,
 #     d,
 #     pars::NamedTuple{N},
 #     ctx,
-# ) where {X,N}
+# ) where {Z,N}
 #     if X ∈ N
 #         quote
 #             # @info "$X ∈ N"
@@ -186,5 +192,7 @@ end
     predict_rand(rng, m, NamedTuple())
 end
 
-predict(args...) = rand(args...)
+function predict(args...)
+    rand(args...)
+end
 

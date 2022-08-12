@@ -38,7 +38,7 @@ function make_body(M, ast::Expr, argsT, obsT, parsT)
 
                 rhs = unsolve(rhs)
                     
-                obj = if inkeys(sx, obsT)
+                z_obs = if inkeys(sx, obsT)
                     # TODO: Even if `x` is observed, we may have `lens(x) == missing`
                     :($Observed{$qx}(_obs.$x))
                 elseif inkeys(sx, argsT)
@@ -49,11 +49,23 @@ function make_body(M, ast::Expr, argsT, obsT, parsT)
                     :($Unobserved{$qx}(missing))
                 end
                 
+                @gensym xj
+
                 q = quote
-                    ($x, _ctx) = $tilde(_cfg, $obj, $l, AbstractMeasure($rhs), _ctx)
+                    ($xj, _ctx) = $tilde(_cfg, $z_obs, $l, AbstractMeasure($rhs), _ctx)
                     # _ctx isa Tilde.ReturnNow && return _ctx.value
                 end
 
+                # If we have e.g.`x ~ ...`, the lens is `identity`, but that's
+                # only after it's evaluated. Syntactically it starts as `(opticcompose)()`.
+                if l == Expr(:call, Accessors.opticcompose)
+                    # An identity lens means we've never seen this variable before
+                    push!(q.args, :($x = $xj))
+                else
+                    # For other lenses, we need to refer to the parent object
+                    push!(q.args, :($x = $set($x, $Lens!!($l), $xj)))
+                end
+                
                 q
             end
 

@@ -18,12 +18,12 @@ end
 
 @inline function tilde(
     ::typeof(weightedrand),
-    x::Observed{X},
+    z::Observed{Z},
     lens,
     d,
     cfg,
     ctx::NamedTuple,
-) where {X}
+) where {Z}
     x = value(x)
     Δℓ = logdensityof(d, lens(x))
     @reset ctx.ℓ += Δℓ
@@ -32,14 +32,14 @@ end
 
 @inline function tilde(
     ::typeof(weightedrand),
-    x::Unobserved{X},
+    z::Unobserved{Z},
     lens,
     d,
     cfg,
     ctx::NamedTuple,
-) where {X}
+) where {Z}
     xnew = set(value(x), Lens!!(lens), rand(cfg.rng, d))
     pars = merge(ctx.pars, NamedTuple{(X,)}((xnew,)))
     ctx = merge(ctx, (pars = pars,))
-    (xnew, ctx)
+    (xj, ctx)
 end

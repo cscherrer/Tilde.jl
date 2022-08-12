@@ -14,27 +14,30 @@ end
 
 @inline function tilde(
     cfg::BasemeasureConfig,
-    obj::Unobserved{X},
+    z_obs::Unobserved{Z},
     lens,
     d,
     ctx,
-) where {X}
-    x = value(obj)
-    xj = lens(x)
-    b = basemeasure(d, xj)
-    ctx = mymerge(ctx, NamedTuple{(X,)}((b,)))
-    (x, ctx)
+) where {Z}
+    z = value(z_obs)
+    zj = lens(z)
+    b = basemeasure(d, zj)
+    ctx = mymerge(ctx, NamedTuple{(Z,)}((b,)))
+    xj = predict(d, zj)
+    (xj, ctx)
 end
 
 @inline function tilde(
     cfg::BasemeasureConfig,
-    obj::Observed{X},
+    z_obs::Observed{Z},
     lens,
     d,
     ctx,
-) where {X}
-    x = value(obj)
-    (x, ctx)
+) where {Z}
+    z = value(z_obs)
+    zj = lens(z)
+    xj = predict(d, zj)
+    (xj, ctx)
 end
 
 function rproduct(nt::NamedTuple)

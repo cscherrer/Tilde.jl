@@ -1,39 +1,50 @@
 using TupleVectors: chainvec
 import MeasureTheory: testvalue
 
-struct TestValueConfig <: AbstractConfig
-end
+# Just a temporary quick fix
+testvalue(m::AbstractConditionalModel) = _rand(FixedRNG(), m)
 
-@inline retfun(cfg::TestValueConfig, r, ctx) = r
+# struct TestValueConfig <: AbstractConfig
+# end
+
+# @inline retfun(cfg::TestValueConfig, r, ctx) = r
 
 
-export testvalue
-EmptyNTtype = NamedTuple{(),Tuple{}} where {T<:Tuple}
+# export testvalue
+# EmptyNTtype = NamedTuple{(),Tuple{}} where {T<:Tuple}
 
-@inline function testvalue(mc::AbstractConditionalModel)
-    cfg = TestValueConfig()
-    ctx = NamedTuple()
-    runmodel(cfg, mc, NamedTuple(), ctx)
-end
+# @inline function testvalue(mc::AbstractConditionalModel)
+#     cfg = TestValueConfig()
+#     ctx = NamedTuple()
+#     runmodel(cfg, mc, NamedTuple(), ctx)
+# end
 
-@inline function tilde(
-    ::TestValueConfig,
-    x::Unobserved{X},
-    lens,
-    d,
-    ctx::NamedTuple,
-) where {X}
-    xnew = set(value(x), Lens!!(lens), testvalue(d))
-    ctx′ = merge(ctx, NamedTuple{(X,)}((xnew,)))
-    (xnew, ctx′)
-end
+# @inline function tilde(
+#     ::TestValueConfig,
+#     z_obs::Unobserved{Z},
+#     lens,
+#     d,
+#     ctx::NamedTuple,
+# ) where {Z}
+#     z = value(z_obs)
+#     zj = testvalue(d)
+#     @show d
+#     @show zj
+#     new_z = set(z, Lens!!(lens), zj)
+#     ctx′ = merge(ctx, NamedTuple{(Z,)}((new_z,)))
+#     xj = predict(d, zj)
+#     (xj, ctx′)
+# end
 
-@inline function tilde(
-    ::TestValueConfig,
-    x::Observed{X},
-    lens,
-    d,
-    ctx::NamedTuple,
-) where {X}
-    (lens(value(x)), ctx)
-end
+# @inline function tilde(
+#     ::TestValueConfig,
+#     z_obs::Observed{Z},
+#     lens,
+#     d,
+#     ctx::NamedTuple,
+# ) where {Z}
+#     z = value(z_obs)
+#     zj = lens(z)
+#     xj = predict(d, zj)
+#     (xj, ctx)
+# end

@@ -13,4 +13,4 @@ end
 Unobserved{N}(x::T) where {N,T} = Unobserved{N,T}(x)
 NamedTuple(o::MaybeObserved{N,T}) where {N,T} = NamedTuple{(N,)}((o.value,))
 
-value(obj::MaybeObserved) = obj.value
+value(z_obs::MaybeObserved) = z_obs.value

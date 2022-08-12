@@ -76,7 +76,7 @@ function call(::typeof(getdag), g, args...)
     MarkovContext(val, parents)
 end
 
-@inline function tilde(::typeof(getdag), x::MaybeObserved{X}, lens, d, pars, ctx) where {X}
+@inline function tilde(::typeof(getdag), x::MaybeObserved{Z}, lens, d, pars, ctx) where {Z}
     dag = ctx.dag
     for p in markov_parents(d)
         # Make sure vertices exist

@@ -52,15 +52,17 @@ end
 
 @inline function tilde(
     cfg::RandConfig{T_rng, RNG},
-    x::Unobserved{X},
+    z_obs::Unobserved{Z},
     lens,
     d,
     ctx,
-) where {X,T_rng, RNG}
-    r = rand(cfg.rng, T_rng, d)
-    xnew = set(value(x), Lens!!(lens), r)
-    ctx′ = mymerge(ctx, NamedTuple{(X,)}((xnew,)))
-    (predict(d, xnew), ctx′)
+) where {Z,T_rng, RNG}
+    z = value(z_obs)
+    zj = rand(cfg.rng, T_rng, d)
+    new_z = set(z, Lens!!(lens), zj)
+    ctx′ = mymerge(ctx, NamedTuple{(Z,)}((new_z,)))
+    xj = predict(d, zj)
+    (xj, ctx′)
 end
 
 
@@ -197,13 +199,13 @@ end
 
 @inline function tilde(
     cfg::RandConfig{T_rng, RNG},
-    obj::Observed{X},
+    z_obs::Observed{Z},
     lens,
     d,
     ctx,
-) where {X,T_rng, RNG}
+) where {Z,T_rng, RNG}
     r = _rand(cfg.rng, T_rng, d)
-    x = value(obj)
+    x = value(z_obs)
     xj = lens(x)
     # TODO: account for cases where `xj == missing`
     (x, ctx)

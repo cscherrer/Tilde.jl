@@ -188,27 +188,30 @@ end
 
 function loadvals(argstype, obstype, parstype)
     args = schema_shallow(argstype)
-    data = schema_shallow(obstype)
+    obs = schema_shallow(obstype)
     pars = schema_shallow(parstype)
 
     loader = @q begin end
 
-    for k in keys(args) ∪ keys(pars) ∪ keys(data)
-        push!(loader.args, :(local $k))
-    end
-    for k in setdiff(keys(args), keys(pars) ∪ keys(data))
+    parkeys = keys(pars)
+    obskeys = collect(setdiff(keys(obs), parkeys))
+    argkeys = collect(setdiff(keys(args), union(obskeys, parkeys)))
+
+    for k in argkeys
         T = getproperty(args, k)
         push!(loader.args, :($k::$T = _args.$k))
     end
-    for k in setdiff(keys(data), keys(pars))
-        T = getproperty(data, k)
-        push!(loader.args, :($k::$T = _obs.$k))
+
+    for k in obskeys
+        T = getproperty(obs, k)
+        push!(loader.args, :(local $k::$T))
     end
 
-    for k in setdiff(keys(pars), keys(data))
-        T = getproperty(pars, k)
-        push!(loader.args, :($k::$T = _pars.$k))
-    end
+    # for k in parkeys
+    #     T = getproperty(pars, k)
+    #     push!(loader.args, :(local $k::$T))
+    # end
+
 
     # for k in keys(pars) ∩ keys(data)
     #     qk = QuoteNode(k)

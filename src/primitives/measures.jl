@@ -68,24 +68,27 @@ export measures
     rmap(f, nt)
 end
 
-# @inline function tilde(cfg::MeasuresConfig, x::Unobserved{X}, d, ctx) where {X}
+# @inline function tilde(cfg::MeasuresConfig, z::Unobserved{Z}, d, ctx) where {Z}
 #     x = rand(FixedRNG(), d)
-#     ctx = merge(ctx, NamedTuple{X}((d,)))
+#     ctx = merge(ctx, NamedTuple{Z}((d,)))
 #     (x, ctx)
 # end
 
-@inline function tilde(cfg::MeasuresConfig, x::Unobserved{X}, lens, d, ctx) where {X}
-    ctx = set(ctx, PropertyLens{X}() ⨟ Lens!!(lens), d)
-
-    xnew = getproperty(cfg.pars, X)
-    (xnew, ctx)
+@inline function tilde(cfg::MeasuresConfig, z_obs::Unobserved{Z}, lens, d, ctx) where {Z}
+    ctx = set(ctx, PropertyLens{Z}() ⨟ Lens!!(lens), d)
+    z = value(z_obs)
+    zj = lens(z)
+    xj = predict(d, zj)
+    (xj, ctx)
 end
 
-@inline function tilde(cfg::MeasuresConfig, x::Observed{X}, lens, d, ctx) where {X}
-    x = value(x)
+@inline function tilde(cfg::MeasuresConfig, z_obs::Observed{Z}, lens, d, ctx) where {Z}
+    z = value(z_obs)
+    zj = lens(z)
+    xj = predict(d, zj)
 
-    ctx = set(ctx, PropertyLens{X}() ⨟ Lens!!(lens), measures(d | lens(x)))
-    (x, ctx)
+    ctx = set(ctx, PropertyLens{Z}() ⨟ Lens!!(lens), measures(d | zj))
+    (xj, ctx)
 end
 
 function as(mdl::AbstractConditionalModel)

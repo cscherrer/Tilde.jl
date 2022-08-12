@@ -23,16 +23,17 @@ end
 
 @inline function tilde(
     cfg::LogdensityConfig{typeof(logdensityof)},
-    x::MaybeObserved{X},
+    z_obs::MaybeObserved{Z},
     lens,
     d,
     ctx::NamedTuple,
-) where {X}
-    x = value(x)
+) where {Z}
+    z = value(z_obs)
+    zj = lens(z)
     # insupport(d, lens(x)) || return (x, ReturnNow(-Inf))
-    pred = predict(d, lens(x))
-    @reset ctx.ℓ += logdensityof(d, lens(x))
-    (pred, ctx)
+    xj = predict(d, zj)
+    @reset ctx.ℓ += logdensityof(d, zj)
+    (xj, ctx)
 end
 
 @inline function MeasureBase.unsafe_logdensityof(
@@ -45,16 +46,17 @@ end
 
 @inline function tilde(
     cfg::LogdensityConfig{typeof(unsafe_logdensityof)},
-    x::MaybeObserved{X},
+    z_obs::MaybeObserved{Z},
     lens,
     d,
     ctx::NamedTuple,
-) where {X}
-    x = value(x)
+) where {Z}
+    z = value(z_obs)
+    zj = lens(z)
+    xj = predict(d, zj)
     # insupport(d, lens(x)) || return (x, ReturnNow(-Inf))
-    pred = predict(d, lens(x))
-    @reset ctx.ℓ += unsafe_logdensityof(d, lens(x))
-    (pred, ctx)
+    @reset ctx.ℓ += unsafe_logdensityof(d, zj)
+    (xj, ctx)
 end
 
 
@@ -68,14 +70,16 @@ end
 
 @inline function tilde(
     cfg::LogdensityConfig{typeof(logdensity_def)},
-    x::MaybeObserved{X},
+    z_obs::MaybeObserved{Z},
     lens,
     d,
     ctx::NamedTuple,
-) where {X}
-    x = value(x)
+) where {Z}
+    z = value(z_obs)
+    zj = lens(z)
+    xj = predict(d, zj)
     # insupport(d, lens(x)) || return (x, ReturnNow(-Inf))
-    pred = predict(d, lens(x))
-    @reset ctx.ℓ += logdensity_def(d, lens(x))
-    (pred, ctx)
+    pred = predict(d, zj)
+    @reset ctx.ℓ += logdensity_def(d, zj)
+    (xj, ctx)
 end
