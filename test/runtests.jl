@@ -178,6 +178,20 @@ include("examples-list.jl")
         @test logdensityof(m(), rand(m())) isa Float64
     end
 
+    @testset "`as`` doesn't overwrite" begin
+        m = @model x begin
+            for j in eachindex(x)
+                x[j] ~ Normal()
+            end
+        end
+
+        x = randn(3)
+        y = copy(x)
+        t1 = as(m(x))
+        t2 = as(m(x) | (; x))
+        @test x == y
+    end
+
     @testset "rand" begin
         m = @model begin
             p ~ Uniform()
