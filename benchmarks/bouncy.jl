@@ -14,73 +14,56 @@ using ForwardDiff
 using ForwardDiff: Dual
 using Pathfinder
 using Pathfinder.PDMats
-using MCMCChains
-using TupleVectors: chainvec
-using Tilde.MeasureTheory: transform
 
 Random.seed!(1)
-
-function make_grads(post)
-    as_post = as(post)
-    d = TV.dimension(as_post)
-    obj(θ) = -Tilde.unsafe_logdensityof(post, transform(as_post, θ))
-    ℓ(θ) = -obj(θ)
-    @inline function dneglogp(t, x, v, args...) # two directional derivatives
-        f(t) = obj(x + t * v)
-        u = ForwardDiff.derivative(f, Dual{:hSrkahPmmC}(0.0, 1.0))
-        u.value, u.partials[]
-    end
-
-    gconfig = ForwardDiff.GradientConfig(obj, rand(d), ForwardDiff.Chunk{d}())
-    function ∇neglogp!(y, t, x, args...)
-        ForwardDiff.gradient!(y, obj, x, gconfig)
-        y
-    end
-    ℓ, dneglogp, ∇neglogp!
-end
-
-# ↑ general purpose
-############################################################
-# ↓ problem-specific
 
 # read data
 function readlrdata()
     fname = joinpath("lr.data")
     z = readdlm(fname)
-    A = z[:, 1:(end-1)]
+    A = z[:, 1:end-1]
     A = [ones(size(A, 1)) A]
     y = z[:, end] .- 1
     return A, y
 end
+A, y = readlrdata();
+At = collect(A');
 
 model_lr = @model (At, y, σ) begin
     d, n = size(At)
     θ ~ Normal(σ = σ)^d
     for j in 1:n
-        logitp = view(At, :, j)' * θ
+        logitp = dot(view(At, :, j), θ)
         y[j] ~ Bernoulli(logitp = logitp)
     end
 end
-
-# Define model arguments
-A, y = readlrdata();
-At = collect(A');
 σ = 100.0
 
-# Represent the posterior
-post = model_lr(At, y, σ) | (; y)
+function make_grads(model_lr, At, y, σ)
+    post = model_lr(At, y, σ) | (; y)
+    as_post = as(post)
+    obj(θ) = -Tilde.unsafe_logdensityof(post, transform(as_post, θ))
+    ℓ(θ) = -obj(θ)
+    @inline function dneglogp(t, x, v) # two directional derivatives
+        f(t) = obj(x + t * v)
+        u = ForwardDiff.derivative(f, Dual{:hSrkahPmmC}(0.0, 1.0))
+        u.value, u.partials[]
+    end
 
-d = TV.dimension(as(post))
-
-# Make sure gradients are working
-let
-    ℓ, dneglogp, ∇neglogp! = make_grads(post)
-    @show dneglogp(2.4, randn(d), randn(d))
-    y = Vector{Float64}(undef, d)
-    @show ∇neglogp!(y, 2.1, randn(d))
-    nothing
+    gconfig = ForwardDiff.GradientConfig(obj, rand(25), ForwardDiff.Chunk{25}())
+    function ∇neglogp!(y, t, x)
+        ForwardDiff.gradient!(y, obj, x, gconfig)
+        return
+    end
+    post, ℓ, dneglogp, ∇neglogp!
 end
 
+post, ℓ, dneglogp, ∇neglogp! = make_grads(model_lr, At, y, σ)
+# Try things out
+dneglogp(2.4, randn(25), randn(25));
+∇neglogp!(randn(25), 2.1, randn(25));
+
+d = 25 # number of parameters 
 t0 = 0.0;
 x0 = zeros(d); # starting point sampler
 # estimated posterior mean (n=100000, 797s)
@@ -146,7 +129,8 @@ sampler = ZZB.NotFactSampler(
     ),
 );
 
-# @time first(Iterators.drop(tvs,1000))
+using TupleVectors: chainvec
+using Tilde.MeasureTheory: transform
 
 function collect_sampler(t, sampler, n; progress = true, progress_stops = 20)
     if progress
@@ -182,6 +166,7 @@ elapsed_time = @elapsed @time begin
     bps_samples, info = collect_sampler(as(post), sampler, n; progress = false)
 end
 
+using MCMCChains
 bps_chain = MCMCChains.Chains(bps_samples.θ);
 bps_chain = setinfo(bps_chain, (; start_time = 0.0, stop_time = elapsed_time));
 
