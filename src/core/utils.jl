@@ -164,85 +164,11 @@ function loadvals(argstype)
         push!(loader.args, :(local $k = _args.$k))
     end
 
-
-    # for k in keys(pars) ∩ keys(data)
-    #     qk = QuoteNode(k)
-    #     if typejoin(getproperty(pars, k), getproperty(data, k)) <: NamedTuple
-    #         push!(loader.args, :($k = Tilde.NestedTuples.lazymerge(_obs.$k, _pars.$k)))
-    #     else
-    #         T = getproperty(pars, k)
-    #         push!(loader.args, quote
-    #             _k = $qk
-    #             @warn "Duplicate key, ignoring $_k in data"
-    #             $k::$T = _pars.$k
-    #         end)
-    #     end
-    # end
-
     src -> (@q begin
         $loader
         $src
     end) |> MacroTools.flatten
 end
-
-
-function loadvals(argstype, obstype, parstype)
-    args = schema_shallow(argstype)
-    obs = schema_shallow(obstype)
-    pars = schema_shallow(parstype)
-
-    loader = @q begin end
-
-    parkeys = keys(pars)
-    obskeys = collect(setdiff(keys(obs), parkeys))
-    argkeys = collect(setdiff(keys(args), union(obskeys, parkeys)))
-
-    for k in argkeys
-        T = getproperty(args, k)
-        push!(loader.args, :($k::$T = _args.$k))
-    end
-
-    for k in obskeys
-        T = getproperty(obs, k)
-        push!(loader.args, :(local $k::$T))
-    end
-
-    # for k in parkeys
-    #     T = getproperty(pars, k)
-    #     push!(loader.args, :(local $k::$T))
-    # end
-
-
-    # for k in keys(pars) ∩ keys(data)
-    #     qk = QuoteNode(k)
-    #     if typejoin(getproperty(pars, k), getproperty(data, k)) <: NamedTuple
-    #         push!(loader.args, :($k = Tilde.NestedTuples.lazymerge(_obs.$k, _pars.$k)))
-    #     else
-    #         T = getproperty(pars, k)
-    #         push!(loader.args, quote
-    #             _k = $qk
-    #             @warn "Duplicate key, ignoring $_k in data"
-    #             $k::$T = _pars.$k
-    #         end)
-    #     end
-    # end
-
-    src -> (@q begin
-        $loader
-        $src
-    end) |> MacroTools.flatten
-end
-
-# This is just handy for REPLing, no direct connection to Tilde
-
-# julia> tower(Int)
-# 6-element Array{DataType,1}:
-#  Int64
-#  Signed
-#  Integer
-#  Real
-#  Number
-#  Any
 
 const TypeLevel = GG.TypeLevel
 
