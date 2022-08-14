@@ -10,7 +10,7 @@ struct InsupportConfig <: AbstractConfig end
     pars::NamedTuple{N,T};
 ) where {M,A,O,N,T}
     cfg = InsupportConfig()
-    runmodel(cfg, cm, pars, (insupport=true,))
+    runmodel(cfg, cm, pars, (insupport = true,))
 end
 
 @inline function tilde(

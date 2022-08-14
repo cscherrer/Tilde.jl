@@ -2,15 +2,23 @@ using Random: GLOBAL_RNG, AbstractRNG
 using TupleVectors
 export predict
 
-struct PredictConfig{T_rng, RNG,P} <: AbstractConfig
+struct PredictConfig{T_rng,RNG,P} <: AbstractConfig
     rng::RNG
     pars::P
-    PredictConfig(::Type{T_rng}, rng::RNG, pars::P) where {T_rng, RNG<:AbstractRNG,P} = new{T_rng,RNG,P}(rng,pars)
+    function PredictConfig(
+        ::Type{T_rng},
+        rng::RNG,
+        pars::P,
+    ) where {T_rng,RNG<:AbstractRNG,P}
+        new{T_rng,RNG,P}(rng, pars)
+    end
 end
 
-PredictConfig(::Type{T_rng}, rng::AbstractRNG) where {T_rng} = PredictConfig(T_rng, rng, NamedTuple())
+function PredictConfig(::Type{T_rng}, rng::AbstractRNG) where {T_rng}
+    PredictConfig(T_rng, rng, NamedTuple())
+end
 PredictConfig(::Type{T_rng}, pars) where {T_rng} = PredictConfig(T_rng, GLOBAL_RNG, pars)
-PredictConfig(rng::AbstractRNG, pars)  = PredictConfig(Float64, rng, pars)
+PredictConfig(rng::AbstractRNG, pars) = PredictConfig(Float64, rng, pars)
 
 PredictConfig(::Type{T_rng}) where {T_rng} = PredictConfig(T_rng, GLOBAL_RNG, NamedTuple())
 PredictConfig(rng::AbstractRNG) = PredictConfig(Float64, rng, NamedTuple())
@@ -19,7 +27,6 @@ PredictConfig(pars) = PredictConfig(Float64, GLOBAL_RNG, pars)
 PredictConfig() = PredictConfig(Float64, GLOBAL_RNG, NamedTuple())
 
 retfun(::PredictConfig, r, ctx) = r
-
 
 anyfy(x) = x
 anyfy(x::AbstractArray) = collect(Any, x)
@@ -56,12 +63,9 @@ end
     runmodel(cfg, m, pars, ctx)
 end
 
-
 @inline function tilde(cfg::PredictConfig, x, lens, d, ctx)
     tilde_predict(cfg.rng, x, lens, d, cfg.pars, ctx)
 end
-
-
 
 @generated function tilde_predict(
     rng,
@@ -87,7 +91,6 @@ end
         end
     end
 end
-
 
 ###############################################################################
 
@@ -166,21 +169,16 @@ end
 #     end
 # end
 
-
-
 ###############################################################################
 # Dispatch helpers
-
 
 @inline function predict(rng::AbstractRNG, m::ModelPosterior, pars::NamedTuple)
     predict_rand(rng, m.closure, pars)
 end
 
-
 @inline function predict(m::AbstractConditionalModel, pars)
     predict(GLOBAL_RNG, m, pars)
 end
-
 
 @inline function predict(m::AbstractConditionalModel)
     predict(GLOBAL_RNG, m, NamedTuple())

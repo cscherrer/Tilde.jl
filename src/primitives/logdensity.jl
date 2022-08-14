@@ -18,7 +18,7 @@ end
     pars::NamedTuple{N,T};
 ) where {M,A,O,N,T}
     cfg = LogdensityConfig(logdensityof)
-    runmodel(cfg, cm, pars, (ℓ=0,))
+    runmodel(cfg, cm, pars, (ℓ = 0,))
 end
 
 @inline function tilde(
@@ -58,7 +58,6 @@ end
     @reset ctx.ℓ += unsafe_logdensityof(d, zj)
     (xj, ctx)
 end
-
 
 @inline function MeasureBase.logdensity_def(
     cm::AbstractConditionalModel{M,A,O},

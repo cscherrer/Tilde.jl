@@ -115,7 +115,6 @@ function __init__()
     end
 end
 
-
 Base.copy(m::AbstractModel) = m
 Base.copy(cl::ModelClosure) = model(cl)(rmap(copy, argvals(cl)))
 

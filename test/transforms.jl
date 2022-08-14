@@ -1,7 +1,7 @@
-m = @model (n,α,β) begin
+m = @model (n, α, β) begin
     p ~ Beta(α, β)
     x ~ Binomial(n, p)
-    z ~ Binomial(n, α/(α+β))
+    z ~ Binomial(n, α / (α + β))
 end
 
 @testset "prior" begin
@@ -10,7 +10,6 @@ end
         p ~ Beta(α, β)
     end
 end
-
 
 @testset "likelihood" begin
     m1 = Tilde.likelihood(m, :x)

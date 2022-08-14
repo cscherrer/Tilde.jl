@@ -3,7 +3,6 @@ struct ModelClosure{M,V} <: AbstractConditionalModel{M,V,NamedTuple{(),Tuple{}}}
     argvals::V
 end
 
-
 function Base.show(io::IO, mc::ModelClosure)
     println(io, "ModelClosure given")
     println(io, "    arguments    ", keys(argvals(mc)))
@@ -24,7 +23,9 @@ end
 
 model(c::ModelClosure) = c.model
 
-(m::AbstractModel{A,B,M})(nt::NT) where {A,B,M,NT<:NamedTuple} = ModelClosure{Model{A,B,M}, NT}(m,nt)
+function (m::AbstractModel{A,B,M})(nt::NT) where {A,B,M,NT<:NamedTuple}
+    ModelClosure{Model{A,B,M},NT}(m, nt)
+end
 
 (mc::ModelClosure)(nt::NamedTuple) = ModelClosure(model(mc), mymerge(mc.argvals, nt))
 

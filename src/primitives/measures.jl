@@ -48,7 +48,6 @@ end
 
 @inline retfun(cfg::MeasuresConfig, r, ctx) = ctx
 
-
 export measures
 
 @inline function measures(m::AbstractConditionalModel, pars::NamedTuple{N,T}) where {N,T}
@@ -58,7 +57,7 @@ export measures
     end
     sim(x) = x
 
-    cfg=  MeasuresConfig(pars)
+    cfg = MeasuresConfig(pars)
     ctx = rmap(sim, pars)
     nt = runmodel(cfg, m, pars, ctx)
 
@@ -96,12 +95,13 @@ function as(mdl::AbstractConditionalModel)
     as(map(as, ms))
 end
 
-function as(nt::NamedTuple) 
+function as(nt::NamedTuple)
     as(map(as, nt))
 end
 
-as(transformations::NamedTuple{N,<:TV.NTransforms}) where N =
+function as(transformations::NamedTuple{N,<:TV.NTransforms}) where {N}
     TV.TransformTuple(transformations)
+end
 
 function measures(m::ModelClosure)
     m = copy(m)

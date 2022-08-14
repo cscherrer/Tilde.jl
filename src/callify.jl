@@ -11,19 +11,19 @@ function callify(g, ast)
         default() = Expr(head, map(f, args)...)
 
         # Convert `for` to `while`
-        if head == :for 
+        if head == :for
             arg1 = args[1]
             @assert arg1.head == :(=)
-            a,A0 = arg1.args
+            a, A0 = arg1.args
             A0 = callify(g, A0)
-            @gensym temp 
+            @gensym temp
             @gensym state
             @gensym A
             return quote
                 $A = $A0
                 $temp = $call($g, iterate, $A)
                 while $temp !== nothing
-                    $a, $state = $temp 
+                    $a, $state = $temp
                     $(args[2])
                     $temp = $call($g, iterate, $A, $state)
                 end
@@ -52,4 +52,3 @@ function callify(g, ast)
 
     foldast(leaf, branch)(ast) |> MacroTools.flatten
 end
-

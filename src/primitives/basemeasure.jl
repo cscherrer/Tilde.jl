@@ -9,16 +9,10 @@ retfun(::BasemeasureConfig, r, ctx) = ctx
 end
 
 @inline function basemeasure(m::AbstractConditionalModel; ctx = NamedTuple())
-    basemeasure(m, _rand(FixedRNG(), m); ctx=ctx)
+    basemeasure(m, _rand(FixedRNG(), m); ctx = ctx)
 end
 
-@inline function tilde(
-    cfg::BasemeasureConfig,
-    z_obs::Unobserved{Z},
-    lens,
-    d,
-    ctx,
-) where {Z}
+@inline function tilde(cfg::BasemeasureConfig, z_obs::Unobserved{Z}, lens, d, ctx) where {Z}
     z = value(z_obs)
     zj = lens(z)
     b = basemeasure(d, zj)
@@ -27,13 +21,7 @@ end
     (xj, ctx)
 end
 
-@inline function tilde(
-    cfg::BasemeasureConfig,
-    z_obs::Observed{Z},
-    lens,
-    d,
-    ctx,
-) where {Z}
+@inline function tilde(cfg::BasemeasureConfig, z_obs::Observed{Z}, lens, d, ctx) where {Z}
     z = value(z_obs)
     zj = lens(z)
     xj = predict(FixedRNG(), d, zj)

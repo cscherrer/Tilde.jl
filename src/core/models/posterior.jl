@@ -42,4 +42,9 @@ function Base.:|(post::ModelPosterior, nt::NamedTuple)
     ModelPosterior(post.closure, mymerge(post.obs, nt))
 end
 
-MeasureBase.condition(m::MC, nt::NT) where {M,V,MC<:ModelClosure{M,V},NT<:NamedTuple} = ModelPosterior{M, V, NT}(m, nt)
+function MeasureBase.condition(
+    m::MC,
+    nt::NT,
+) where {M,V,MC<:ModelClosure{M,V},NT<:NamedTuple}
+    ModelPosterior{M,V,NT}(m, nt)
+end

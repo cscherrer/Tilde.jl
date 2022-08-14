@@ -3,19 +3,18 @@ using MLStyle
 using NestedTuples
 using NestedTuples: LazyMerge
 
+schema_shallow(::NamedTuple{(),Tuple{}}) = NamedTuple()
+schema_shallow(::Type{NamedTuple{(),Tuple{}}}) = NamedTuple()
 
-schema_shallow(::NamedTuple{(), Tuple{}}) = NamedTuple()
-schema_shallow(::Type{NamedTuple{(), Tuple{}}}) = NamedTuple()
-
-function schema_shallow(NT::Type{NamedTuple{names, T}}) where {names, T}
+function schema_shallow(NT::Type{NamedTuple{names,T}}) where {names,T}
     return namedtuple(NestedTuples.ntkeys(NT), schema_shallow(NestedTuples.ntvaltype(NT)))
 end
 
-function schema_shallow(TT::Type{T}) where {T <: Tuple} 
+function schema_shallow(TT::Type{T}) where {T<:Tuple}
     return Tuple(TT.types)
 end
 
-schema_shallow(t::T) where {T <: NamedTuple} = schema_shallow(T) 
+schema_shallow(t::T) where {T<:NamedTuple} = schema_shallow(T)
 
 schema_shallow(T) = T
 
@@ -152,11 +151,9 @@ allequal(xs) = all(xs[1] .== xs)
 # @__MODULE__
 # names
 
-
-
 function loadvals(argstype)
     args = schema_shallow(argstype)
-   
+
     loader = @q begin end
 
     for k in keys(args)
@@ -183,7 +180,7 @@ function dropreturn(ast)
     function branch(f, head, args)
         head === :return && return quote end
         return Expr(head, map(f, args)...)
-    end 
+    end
     foldast(leaf, branch)(ast) |> MacroTools.flatten
 end
 
@@ -321,24 +318,32 @@ Base.@pure function merge_names(an::Tuple{Vararg{Symbol}}, bn::Tuple{Vararg{Symb
     (names...,)
 end
 
-Base.@pure function merge_types(names::Tuple{Vararg{Symbol}}, a::Type{<:NamedTuple}, b::Type{<:NamedTuple})
+Base.@pure function merge_types(
+    names::Tuple{Vararg{Symbol}},
+    a::Type{<:NamedTuple},
+    b::Type{<:NamedTuple},
+)
     @nospecialize names a b
     bn = Base._nt_names(b)
-    return Tuple{Any[ fieldtype(Base.sym_in(names[n], bn) ? b : a, names[n]) for n in 1:length(names) ]...}
+    return Tuple{
+        Any[
+            fieldtype(Base.sym_in(names[n], bn) ? b : a, names[n]) for n in 1:length(names)
+        ]...,
+    }
 end
 
-
-@generated function mymerge(a::NamedTuple{an}, b::NamedTuple{bn}) where {an, bn}
+@generated function mymerge(a::NamedTuple{an}, b::NamedTuple{bn}) where {an,bn}
     names = Base.merge_names(an, bn)
     types = Base.merge_types(names, a, b)
-    vals = Any[ :(getfield($(Base.sym_in(names[n], bn) ? :b : :a), $(QuoteNode(names[n])))) for n in 1:length(names) ]
+    vals = Any[
+        :(getfield($(Base.sym_in(names[n], bn) ? :b : :a), $(QuoteNode(names[n])))) for
+        n in 1:length(names)
+    ]
     quote
         # $(Expr(:meta, :inline))
         NamedTuple{$names,$types}(($(vals...),))::NamedTuple{$names,$types}
     end
 end
-
-
 
 abstract type MayReturn end
 struct HasReturn <: MayReturn end
@@ -355,7 +360,6 @@ end
 @generated function hasreturn(::M) where {M<:AbstractConditionalModel}
     _hasreturn(body(model(M))) ? HasReturn() : NoReturn()
 end
-
 
 _hasreturn(x) = false
 
