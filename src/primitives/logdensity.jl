@@ -31,7 +31,7 @@ end
     z = value(z_obs)
     zj = lens(z)
     # insupport(d, lens(x)) || return (x, ReturnNow(-Inf))
-    xj = predict(d, zj)
+    xj = predict(FixedRNG(), d, zj)
     @reset ctx.ℓ += logdensityof(d, zj)
     (xj, ctx)
 end
@@ -53,7 +53,7 @@ end
 ) where {Z}
     z = value(z_obs)
     zj = lens(z)
-    xj = predict(d, zj)
+    xj = predict(FixedRNG(), d, zj)
     # insupport(d, lens(x)) || return (x, ReturnNow(-Inf))
     @reset ctx.ℓ += unsafe_logdensityof(d, zj)
     (xj, ctx)
@@ -77,9 +77,9 @@ end
 ) where {Z}
     z = value(z_obs)
     zj = lens(z)
-    xj = predict(d, zj)
+    xj = predict(FixedRNG(), d, zj)
     # insupport(d, lens(x)) || return (x, ReturnNow(-Inf))
-    pred = predict(d, zj)
+    pred = predict(FixedRNG(), d, zj)
     @reset ctx.ℓ += logdensity_def(d, zj)
     (xj, ctx)
 end

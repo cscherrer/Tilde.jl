@@ -103,10 +103,16 @@ end
 as(transformations::NamedTuple{N,<:TV.NTransforms}) where N =
     TV.TransformTuple(transformations)
 
-measures(m::ModelClosure) = measures(m, rand(FixedRNG(), m))
+function measures(m::ModelClosure)
+    m = copy(m)
+    measures(m, rand(FixedRNG(), m))
+end
 
 # Call `rand(m.closure)` instead of `_rand(m)`
-measures(m::ModelPosterior) = measures(m, rand(FixedRNG(), m.closure))
+function measures(m::ModelPosterior)
+    m = copy(m)
+    measures(m, rand(FixedRNG(), m.closure))
+end
 
 # Base.:|(m::AbstractMeasure, x) = Dirac(x)
 measures(m::AbstractMeasure) = m

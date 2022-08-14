@@ -23,7 +23,7 @@ end
     zj = lens(z)
     b = basemeasure(d, zj)
     ctx = mymerge(ctx, NamedTuple{(Z,)}((b,)))
-    xj = predict(d, zj)
+    xj = predict(FixedRNG(), d, zj)
     (xj, ctx)
 end
 
@@ -36,7 +36,7 @@ end
 ) where {Z}
     z = value(z_obs)
     zj = lens(z)
-    xj = predict(d, zj)
+    xj = predict(FixedRNG(), d, zj)
     (xj, ctx)
 end
 
