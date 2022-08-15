@@ -116,8 +116,6 @@ end
 
 import MacroTools: striplines, @q
 
-allequal(xs) = all(xs[1] .== xs)
-
 # # fold example usage:
 # # ------------------
 # # function leafCount(ast)
