@@ -1,7 +1,5 @@
 module Tilde
 
-using Compat
-
 import Base.rand
 using Random
 using Reexport: @reexport
