@@ -42,8 +42,6 @@ using TupleVectors: unwrap
 # using SimplePosets: SimplePoset
 # import SimplePosets
 
-using RuntimeGeneratedFunctions
-RuntimeGeneratedFunctions.init(@__MODULE__)
 using MeasureBase: AbstractTransitionKernel
 
 using NestedTuples: TypelevelExpr
