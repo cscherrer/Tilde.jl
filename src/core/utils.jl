@@ -3,6 +3,21 @@ using MLStyle
 using NestedTuples
 using NestedTuples: LazyMerge
 
+schema_shallow(::NamedTuple{(),Tuple{}}) = NamedTuple()
+schema_shallow(::Type{NamedTuple{(),Tuple{}}}) = NamedTuple()
+
+function schema_shallow(NT::Type{NamedTuple{names,T}}) where {names,T}
+    return namedtuple(NestedTuples.ntkeys(NT), schema_shallow(NestedTuples.ntvaltype(NT)))
+end
+
+function schema_shallow(TT::Type{T}) where {T<:Tuple}
+    return Tuple(TT.types)
+end
+
+schema_shallow(t::T) where {T<:NamedTuple} = schema_shallow(T)
+
+schema_shallow(T) = T
+
 expr(x) = :(identity($x))
 
 # like `something`, but doesn't throw an error
@@ -101,12 +116,6 @@ end
 
 import MacroTools: striplines, @q
 
-# function arguments(model::DAGModel)
-#     model.args
-# end
-
-allequal(xs) = all(xs[1] .== xs)
-
 # # fold example usage:
 # # ------------------
 # # function leafCount(ast)
@@ -129,22 +138,6 @@ allequal(xs) = all(xs[1] .== xs)
 # # julia> as((;s=as(Array, as𝕀,4), a=asℝ))(randn(5))
 # # (s = [0.545324, 0.281332, 0.418541, 0.485946], a = 2.217762640580984)
 
-# From https://github.com/thautwarm/MLStyle.jl/issues/66
-@active LamExpr(x) begin
-    @match x begin
-        :($a -> begin
-            $(bs...)
-        end) => let exprs = filter(x -> !(x isa LineNumberNode), bs)
-            if length(exprs) == 1
-                (a, exprs[1])
-            else
-                (a, Expr(:block, bs...))
-            end
-        end
-        _ => nothing
-    end
-end
-
 # using BenchmarkTools
 # f(;kwargs...) = kwargs[:a] + kwargs[:b]
 
@@ -156,65 +149,14 @@ end
 # @__MODULE__
 # names
 
-# getprototype(::Type{NamedTuple{(),Tuple{}}}) = NamedTuple()
-getprototype(::Type{NamedTuple{N,T} where {T<:Tuple}}) where {N} = NamedTuple{N}
-getprototype(::NamedTuple{N,T} where {T<:Tuple}) where {N} = NamedTuple{N}
+function loadvals(argstype)
+    args = schema_shallow(argstype)
 
-function loadvals(argstype, obstype)
-    args = getntkeys(argstype)
-    obs = getntkeys(obstype)
     loader = @q begin end
 
-    for k in args
-        push!(loader.args, :($k = _args.$k))
-    end
-    for k in obs
-        push!(loader.args, :($k = _obs.$k))
-    end
-
-    src -> (@q begin
-        $loader
-        $src
-    end) |> MacroTools.flatten
-end
-
-function loadvals(argstype, obstype, parstype)
-    args = schema(argstype)
-    data = schema(obstype)
-    pars = schema(parstype)
-
-    loader = @q begin
-    end
-
-    for k in keys(args) ∪ keys(pars) ∪ keys(data)
-        push!(loader.args, :(local $k))
-    end
-    for k in setdiff(keys(args), keys(pars) ∪ keys(data))
+    for k in keys(args)
         T = getproperty(args, k)
-        push!(loader.args, :($k::$T = _args.$k))
-    end
-    for k in setdiff(keys(data), keys(pars))
-        T = getproperty(data, k)
-        push!(loader.args, :($k::$T = _obs.$k))
-    end
-
-    for k in setdiff(keys(pars), keys(data))
-        T = getproperty(pars, k)
-        push!(loader.args, :($k::$T = _pars.$k))
-    end
-
-    for k in keys(pars) ∩ keys(data)
-        qk = QuoteNode(k)
-        if typejoin(getproperty(pars, k), getproperty(data, k)) <: NamedTuple
-            push!(loader.args, :($k = Tilde.NestedTuples.lazymerge(_obs.$k, _pars.$k)))
-        else
-            T = getproperty(pars, k)
-            push!(loader.args, quote
-                _k = $qk
-                @warn "Duplicate key, ignoring $_k in data"
-                $k::$T = _pars.$k
-            end)
-        end
+        push!(loader.args, :(local $k = _args.$k))
     end
 
     src -> (@q begin
@@ -222,49 +164,33 @@ function loadvals(argstype, obstype, parstype)
         $src
     end) |> MacroTools.flatten
 end
-
-getntkeys(::NamedTuple{A,B}) where {A,B} = A
-getntkeys(::Type{NamedTuple{A,B}}) where {A,B} = A
-getntkeys(::Type{NamedTuple{A}}) where {A} = A
-getntkeys(::Type{LazyMerge{X,Y}}) where {X,Y} = Tuple(getntkeys(X) ∪ getntkeys(Y))
-
-# This is just handy for REPLing, no direct connection to Tilde
-
-# julia> tower(Int)
-# 6-element Array{DataType,1}:
-#  Int64
-#  Signed
-#  Integer
-#  Real
-#  Number
-#  Any
 
 const TypeLevel = GG.TypeLevel
 
-export drop_return
+export dropreturn
 
-function drop_return(m::Model)
-    Model(getmodule(m), arguments(m), drop_return(body(m)))
+function dropreturn(m::Model)
+    Model(getmodule(m), arguments(m), dropreturn(body(m)))
 end
 
-function drop_return(ast)
+function dropreturn(ast)
     leaf(x) = x
     function branch(f, head, args)
-        head === :return && return nothing
+        head === :return && return quote end
         return Expr(head, map(f, args)...)
     end
-    foldast(leaf, branch)(ast)
+    foldast(leaf, branch)(ast) |> MacroTools.flatten
 end
 
-export unVal
-export val2nt
+export setreturn
 
-unVal(::Type{V}) where {T,V<:Val{T}} = T
-unVal(::Val{T}) where {T} = T
+function setreturn(m::Model, expr)
+    Model(getmodule(m), arguments(m), setreturn(dropreturn(body(m)), expr))
+end
 
-function val2nt(v, x)
-    k = Tilde.unVal(v)
-    NamedTuple{(k,)}((x,))
+function setreturn(ast, expr)
+    ast = copy(ast)
+    push!(ast.args, expr)
 end
 
 function detilde(ast)
@@ -377,4 +303,65 @@ narrow_array(x) = collect(Base.Generator(identity, x))
 
 function parse_optic(ex)
     unescape.(Accessors.parse_obj_optic(ex))
+end
+
+Base.@pure function merge_names(an::Tuple{Vararg{Symbol}}, bn::Tuple{Vararg{Symbol}})
+    @nospecialize an bn
+    names = Symbol[an...]
+    for n in bn
+        if !Base.sym_in(n, an)
+            push!(names, n)
+        end
+    end
+    (names...,)
+end
+
+Base.@pure function merge_types(
+    names::Tuple{Vararg{Symbol}},
+    a::Type{<:NamedTuple},
+    b::Type{<:NamedTuple},
+)
+    @nospecialize names a b
+    bn = Base._nt_names(b)
+    return Tuple{
+        Any[
+            fieldtype(Base.sym_in(names[n], bn) ? b : a, names[n]) for n in 1:length(names)
+        ]...,
+    }
+end
+
+@generated function mymerge(a::NamedTuple{an}, b::NamedTuple{bn}) where {an,bn}
+    names = Base.merge_names(an, bn)
+    types = Base.merge_types(names, a, b)
+    vals = Any[
+        :(getfield($(Base.sym_in(names[n], bn) ? :b : :a), $(QuoteNode(names[n])))) for
+        n in 1:length(names)
+    ]
+    quote
+        # $(Expr(:meta, :inline))
+        NamedTuple{$names,$types}(($(vals...),))::NamedTuple{$names,$types}
+    end
+end
+
+abstract type MayReturn end
+struct HasReturn <: MayReturn end
+struct NoReturn <: MayReturn end
+
+export hasreturn
+
+# These work just fine without the `@generated` but take *much* longer 
+# (92μs vs 1.3ns on a small model)
+@generated function hasreturn(::M) where {M<:AbstractModel}
+    _hasreturn(body(M)) ? HasReturn() : NoReturn()
+end
+
+@generated function hasreturn(::M) where {M<:AbstractConditionalModel}
+    _hasreturn(body(model(M))) ? HasReturn() : NoReturn()
+end
+
+_hasreturn(x) = false
+
+function _hasreturn(ast::Expr)
+    ast.head == :return && return true
+    return any(_hasreturn, ast.args)
 end

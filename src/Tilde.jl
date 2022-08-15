@@ -13,6 +13,7 @@ import DensityInterface: densityof
 import DensityInterface: DensityKind
 using DensityInterface
 
+using DistributionMeasures
 using NamedTupleTools
 using SampleChains
 # using SymbolicCodegen
@@ -30,7 +31,6 @@ import MLStyle
 # using MonteCarloMeasurements: Particles, StaticParticles, AbstractParticles
 
 using Requires
-using ArrayInterface: StaticInt
 using Static
 
 using IfElse: ifelse
@@ -42,8 +42,6 @@ using TupleVectors: unwrap
 # using SimplePosets: SimplePoset
 # import SimplePosets
 
-using RuntimeGeneratedFunctions
-RuntimeGeneratedFunctions.init(@__MODULE__)
 using MeasureBase: AbstractTransitionKernel
 
 using NestedTuples: TypelevelExpr
@@ -79,29 +77,33 @@ include("callify.jl")
     end
 end
 
+include("fixedrng.jl")
+include("config.jl")
+include("lensvars.jl")
 include("optics.jl")
 include("maybe.jl")
 include("core/models/abstractmodel.jl")
-include("core/models/astmodel/astmodel.jl")
 include("core/models/model.jl")
 include("core/dependencies.jl")
 include("core/utils.jl")
 include("core/models/closure.jl")
+include("maybeobserved.jl")
 include("core/models/posterior.jl")
-include("primitives/interpret.jl")
 include("distributions/iid.jl")
 
 include("primitives/rand.jl")
 include("primitives/logdensity.jl")
-include("primitives/logdensity_rel.jl")
+# include("primitives/logdensity_rel.jl")
 include("primitives/insupport.jl")
 
-# include("primitives/basemeasure.jl")
 include("primitives/testvalue.jl")
-include("primitives/testparams.jl")
-include("primitives/weightedsampling.jl")
+# include("primitives/testparams.jl")
+# include("primitives/weightedsampling.jl")
 include("primitives/measures.jl")
 include("primitives/basemeasure.jl")
+include("primitives/predict.jl")
+# include("primitives/dag.jl")
+include("primitives/runmodel.jl")
 
 include("transforms/utils.jl")
 
@@ -110,5 +112,10 @@ function __init__()
         include("inference/dynamichmc.jl")
     end
 end
+
+Base.copy(m::AbstractModel) = m
+Base.copy(cl::ModelClosure) = model(cl)(rmap(copy, argvals(cl)))
+
+Base.copy(post::ModelPosterior) = copy(post.closure) | rmap(copy, observations(post))
 
 end # module

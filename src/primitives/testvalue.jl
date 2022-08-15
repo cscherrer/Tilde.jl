@@ -1,39 +1,49 @@
 using TupleVectors: chainvec
 import MeasureTheory: testvalue
 
-export testvalue
-EmptyNTtype = NamedTuple{(),Tuple{}} where {T<:Tuple}
+# Just a temporary quick fix
+testvalue(m::AbstractConditionalModel) = _rand(FixedRNG(), m)
 
-@inline function testvalue(
-    mc::AbstractConditionalModel;
-    cfg = NamedTuple(),
-    ctx = NamedTuple(),
-)
-    gg_call(testvalue, mc, NamedTuple(), cfg, ctx, (r, ctx) -> r)
-end
+# struct TestValueConfig <: AbstractConfig
+# end
 
-@inline function tilde(
-    ::typeof(testvalue),
-    lens,
-    xname,
-    x::Unobserved,
-    d,
-    cfg,
-    ctx::NamedTuple,
-)
-    xnew = set(x.value, Lens!!(lens), testvalue(d))
-    ctx′ = merge(ctx, NamedTuple{(dynamic(xname),)}((xnew,)))
-    (xnew, ctx′, nothing)
-end
+# @inline retfun(cfg::TestValueConfig, r, ctx) = r
 
-@inline function tilde(
-    ::typeof(testvalue),
-    lens,
-    xname,
-    x::Observed,
-    d,
-    cfg,
-    ctx::NamedTuple,
-)
-    (x.value, ctx, nothing)
-end
+# export testvalue
+# EmptyNTtype = NamedTuple{(),Tuple{}} where {T<:Tuple}
+
+# @inline function testvalue(mc::AbstractConditionalModel)
+#     cfg = TestValueConfig()
+#     ctx = NamedTuple()
+#     runmodel(cfg, mc, NamedTuple(), ctx)
+# end
+
+# @inline function tilde(
+#     ::TestValueConfig,
+#     z_obs::Unobserved{Z},
+#     lens,
+#     d,
+#     ctx::NamedTuple,
+# ) where {Z}
+#     z = value(z_obs)
+#     zj = testvalue(d)
+#     @show d
+#     @show zj
+#     new_z = set(z, Lens!!(lens), zj)
+#     ctx′ = merge(ctx, NamedTuple{(Z,)}((new_z,)))
+#     xj = predict(rng, d, zj)
+#     (xj, ctx′)
+# end
+
+# @inline function tilde(
+#     ::TestValueConfig,
+#     z_obs::Observed{Z},
+#     lens,
+#     d,
+#     ctx::NamedTuple,
+# ) where {Z}
+#     z = value(z_obs)
+#     zj = lens(z)
+#     xj = predict(rng, d, zj)
+#     (xj, ctx)
+# end

@@ -1,43 +1,35 @@
 import MeasureBase: basemeasure
 
+struct BasemeasureConfig end
+
+retfun(::BasemeasureConfig, r, ctx) = ctx
+
 @inline function basemeasure(m::AbstractConditionalModel, pars; ctx = NamedTuple())
-    gg_call(basemeasure, m, pars, NamedTuple(), ctx, (r, ctx) -> ctx)
+    rproduct(runmodel(BasemeasureConfig(), m, pars, ctx))
 end
 
-@inline function tilde(
-    ::typeof(basemeasure),
-    lens,
-    xname,
-    x,
-    d,
-    cfg,
-    ctx::NamedTuple,
-    _,
-    ::True,
-)
-    xname = dynamic(xname)
-    xparent = getproperty(cfg.obs, xname)
-    x = lens(xparent)
-    b = basemeasure(d, x)
-    ctx = merge(ctx, NamedTuple{(xname,)}((b,)))
-    (x, ctx, productmeasure(ctx))
+@inline function basemeasure(m::AbstractConditionalModel; ctx = NamedTuple())
+    basemeasure(m, _rand(FixedRNG(), m); ctx = ctx)
 end
 
-@inline function tilde(
-    ::typeof(basemeasure),
-    lens,
-    xname,
-    x,
-    d,
-    cfg,
-    ctx::NamedTuple,
-    _,
-    ::False,
-)
-    xname = dynamic(xname)
-    xparent = getproperty(cfg.pars, xname)
-    x = getproperty(cfg.pars, xname)
-    b = basemeasure(d, x)
-    ctx = merge(ctx, NamedTuple{(xname,)}((b,)))
-    (x, ctx, productmeasure(ctx))
+@inline function tilde(cfg::BasemeasureConfig, z_obs::Unobserved{Z}, lens, d, ctx) where {Z}
+    z = value(z_obs)
+    zj = lens(z)
+    b = basemeasure(d, zj)
+    ctx = mymerge(ctx, NamedTuple{(Z,)}((b,)))
+    xj = predict(FixedRNG(), d, zj)
+    (xj, ctx)
 end
+
+@inline function tilde(cfg::BasemeasureConfig, z_obs::Observed{Z}, lens, d, ctx) where {Z}
+    z = value(z_obs)
+    zj = lens(z)
+    xj = predict(FixedRNG(), d, zj)
+    (xj, ctx)
+end
+
+function rproduct(nt::NamedTuple)
+    productmeasure(map(rproduct, nt))
+end
+
+rproduct(m::AbstractMeasure) = m

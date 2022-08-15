@@ -13,36 +13,33 @@ end
 )
     cfg = (rng = rng,)
     ctx = (ℓ = 0.0, pars = NamedTuple())
-    gg_call(weightedrand, m, NamedTuple(), cfg, ctx, (r, ctx) -> ctx)
+    runmodel(weightedrand, m, NamedTuple(), cfg, ctx, (r, ctx) -> ctx)
 end
 
 @inline function tilde(
     ::typeof(weightedrand),
+    z::Observed{Z},
     lens,
-    xname,
-    x::Observed,
     d,
     cfg,
     ctx::NamedTuple,
-)
-    x = x.value
-    xname = dynamic(xname)
+) where {Z}
+    x = value(x)
     Δℓ = logdensityof(d, lens(x))
     @reset ctx.ℓ += Δℓ
-    (x, ctx, ctx)
+    (x, ctx)
 end
 
 @inline function tilde(
     ::typeof(weightedrand),
+    z::Unobserved{Z},
     lens,
-    xname,
-    x::Unobserved,
     d,
     cfg,
     ctx::NamedTuple,
-)
-    xnew = set(x.value, Lens!!(lens), rand(cfg.rng, d))
-    pars = merge(ctx.pars, NamedTuple{(dynamic(xname),)}((xnew,)))
+) where {Z}
+    xnew = set(value(x), Lens!!(lens), rand(cfg.rng, d))
+    pars = merge(ctx.pars, NamedTuple{(X,)}((xnew,)))
     ctx = merge(ctx, (pars = pars,))
-    (xnew, ctx, nothing)
+    (xj, ctx)
 end

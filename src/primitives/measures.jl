@@ -42,6 +42,12 @@
 #      Normal(μ = -3.75905,)
 # """
 
+struct MeasuresConfig{P} <: AbstractConfig
+    pars::P
+end
+
+@inline retfun(cfg::MeasuresConfig, r, ctx) = ctx
+
 export measures
 
 @inline function measures(m::AbstractConditionalModel, pars::NamedTuple{N,T}) where {N,T}
@@ -51,9 +57,9 @@ export measures
     end
     sim(x) = x
 
+    cfg = MeasuresConfig(pars)
     ctx = rmap(sim, pars)
-
-    nt = gg_call(measures, m, pars, NamedTuple(), ctx, (r, ctx) -> ctx)
+    nt = runmodel(cfg, m, pars, ctx)
 
     f(x::AbstractArray) = productmeasure(narrow_array(x))
     f(x) = x
@@ -61,32 +67,27 @@ export measures
     rmap(f, nt)
 end
 
-@inline function tilde(
-    ::typeof(measures),
-    ::typeof(identity),
-    xname,
-    ::Unobserved,
-    d,
-    cfg,
-    ctx,
-)
-    x = testvalue(d)
-    xname = dynamic(xname)
-    ctx = merge(ctx, NamedTuple{(xname,)}((d,)))
-    (x, ctx, ctx)
+# @inline function tilde(cfg::MeasuresConfig, z::Unobserved{Z}, d, ctx) where {Z}
+#     x = rand(FixedRNG(), d)
+#     ctx = merge(ctx, NamedTuple{Z}((d,)))
+#     (x, ctx)
+# end
+
+@inline function tilde(cfg::MeasuresConfig, z_obs::Unobserved{Z}, lens, d, ctx) where {Z}
+    ctx = set(ctx, PropertyLens{Z}() ⨟ Lens!!(lens), d)
+    z = value(z_obs)
+    zj = lens(z)
+    xj = predict(FixedRNG(), d, zj)
+    (xj, ctx)
 end
 
-@inline function tilde(::typeof(measures), lens, xname, x::Unobserved, d, cfg, ctx)
-    xname = dynamic(xname)
-    ctx = set(ctx, PropertyLens{xname}() ⨟ Lens!!(lens), d)
+@inline function tilde(cfg::MeasuresConfig, z_obs::Observed{Z}, lens, d, ctx) where {Z}
+    z = value(z_obs)
+    zj = lens(z)
+    xj = predict(FixedRNG(), d, zj)
 
-    xnew = getproperty(cfg.pars, xname)
-    (xnew, ctx, ctx)
-end
-
-@inline function tilde(::typeof(measures), lens, xname, x::Observed, d, cfg, ctx)
-    x = x.value
-    (x, ctx, ctx)
+    ctx = set(ctx, PropertyLens{Z}() ⨟ Lens!!(lens), measures(d | zj))
+    (xj, ctx)
 end
 
 function as(mdl::AbstractConditionalModel)
@@ -94,4 +95,26 @@ function as(mdl::AbstractConditionalModel)
     as(map(as, ms))
 end
 
-measures(m) = measures(m, testvalue(m))
+function as(nt::NamedTuple)
+    as(map(as, nt))
+end
+
+function as(transformations::NamedTuple{N,<:TV.NTransforms}) where {N}
+    TV.TransformTuple(transformations)
+end
+
+function measures(m::ModelClosure)
+    m = copy(m)
+    measures(m, rand(FixedRNG(), m))
+end
+
+# Call `rand(m.closure)` instead of `_rand(m)`
+function measures(m::ModelPosterior)
+    m = copy(m)
+    measures(m, rand(FixedRNG(), m.closure))
+end
+
+# Base.:|(m::AbstractMeasure, x) = Dirac(x)
+measures(m::AbstractMeasure) = m
+
+measures(m::MeasureBase.ConditionalMeasure) = Dirac(m.constraint)
