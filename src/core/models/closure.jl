@@ -3,7 +3,6 @@ struct ModelClosure{M,V} <: AbstractConditionalModel{M,V,NamedTuple{(),Tuple{}}}
     argvals::V
 end
 
-
 function Base.show(io::IO, mc::ModelClosure)
     println(io, "ModelClosure given")
     println(io, "    arguments    ", keys(argvals(mc)))
