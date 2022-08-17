@@ -52,4 +52,3 @@ function callify(g, ast)
 
     foldast(leaf, branch)(ast) |> MacroTools.flatten
 end
-<<<<<<< HEAD
