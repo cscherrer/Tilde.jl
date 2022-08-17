@@ -9,7 +9,6 @@ testvalue(m::AbstractConditionalModel) = _rand(FixedRNG(), m)
 
 # @inline retfun(cfg::TestValueConfig, r, ctx) = r
 
-
 # export testvalue
 # EmptyNTtype = NamedTuple{(),Tuple{}} where {T<:Tuple}
 

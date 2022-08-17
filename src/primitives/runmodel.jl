@@ -37,7 +37,7 @@ function make_body(M, ast::Expr, argsT, obsT, parsT)
                 # M = to_type(unsolve(rhs))
 
                 rhs = unsolve(rhs)
-                    
+
                 z_obs = if inkeys(sx, obsT)
                     # TODO: Even if `x` is observed, we may have `lens(x) == missing`
                     :($Observed{$qx}(_obs.$x))
@@ -48,7 +48,7 @@ function make_body(M, ast::Expr, argsT, obsT, parsT)
                 else
                     :($Unobserved{$qx}(missing))
                 end
-                
+
                 @gensym xj
 
                 q = quote
@@ -65,7 +65,7 @@ function make_body(M, ast::Expr, argsT, obsT, parsT)
                     # For other lenses, we need to refer to the parent object
                     push!(q.args, :($x = $set($x, $Lens!!($l), $xj)))
                 end
-                
+
                 q
             end
 
@@ -84,10 +84,9 @@ function make_body(M, ast::Expr, argsT, obsT, parsT)
         end
     end
 
-    body =
-        go(@q begin
-            $(solve_scope(opticize(ast)))
-        end) |> unsolve |> MacroTools.flatten
+    body = go(@q begin
+        $(solve_scope(opticize(ast)))
+    end) |> unsolve |> MacroTools.flatten
 
     body
 end
@@ -106,12 +105,7 @@ struct KnownVars{A,O,P}
     pars::P
 end
 
-@generated function runmodel(
-    _cfg,
-    _mc::MC,
-    _pars::NamedTuple{N,T},
-    _ctx,
-) where {MC,N,T}
+@generated function runmodel(_cfg, _mc::MC, _pars::NamedTuple{N,T}, _ctx) where {MC,N,T}
     _m = type2model(MC)
     M = getmodule(_m)
 
@@ -119,26 +113,24 @@ end
     obsT = obstype(MC)
     parsT = NamedTuple{N,T}
 
-    body = _m.body  |> loadvals(argsT)
+    body = _m.body |> loadvals(argsT)
 
     paramnames = tuple(parameters(_m)...)
-    paramvals = Expr(:tuple, paramnames...) 
+    paramvals = Expr(:tuple, paramnames...)
     argsT = schema(argsT)
     obsT = schema(obsT)
     parsT = schema(parsT)
     body = make_body(M, body, argsT, obsT, parsT)
 
-    q = MacroTools.flatten(
-        @q function (_mc, _cfg, _ctx, _pars)
-            _args = $argvals(_mc)
-            _obs = $observations(_mc)
-            # _vars = KnownVars(_args, _obs, _pars)
-            $body
-            # If body doesn't have a return, default to `return ctx`
-            _params = NamedTuple{$paramnames}($paramvals)
-            return Tilde.retfun(_cfg, _params, _ctx)
-        end
-    )
+    q = MacroTools.flatten(@q function (_mc, _cfg, _ctx, _pars)
+        _args = $argvals(_mc)
+        _obs = $observations(_mc)
+        # _vars = KnownVars(_args, _obs, _pars)
+        $body
+        # If body doesn't have a return, default to `return ctx`
+        _params = NamedTuple{$paramnames}($paramvals)
+        return Tilde.retfun(_cfg, _params, _ctx)
+    end)
 
     q = from_type(_get_gg_func_body(mk_function(M, q))) |> MacroTools.flatten
 

@@ -42,8 +42,6 @@ using TupleVectors: unwrap
 # using SimplePosets: SimplePoset
 # import SimplePosets
 
-using RuntimeGeneratedFunctions
-RuntimeGeneratedFunctions.init(@__MODULE__)
 using MeasureBase: AbstractTransitionKernel
 
 using NestedTuples: TypelevelExpr
@@ -114,7 +112,6 @@ function __init__()
         include("inference/dynamichmc.jl")
     end
 end
-
 
 Base.copy(m::AbstractModel) = m
 Base.copy(cl::ModelClosure) = model(cl)(rmap(copy, argvals(cl)))

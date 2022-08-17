@@ -2,7 +2,7 @@ using Tilde
 using MeasureTheory
 import TransformVariables as TV
 using Aqua
-Aqua.test_all(Tilde; ambiguities=false, unbound_args=false)
+Aqua.test_all(Tilde; ambiguities = false, unbound_args = false)
 
 include("examples-list.jl")
 
@@ -45,8 +45,8 @@ include("examples-list.jl")
             m ~ sub(a = a, b = b)
         end
 
-        x = rand(outer(sub=inner)).m
-        post = outer(sub=inner) | (;m=  (; x))
+        x = rand(outer(sub = inner)).m
+        post = outer(sub = inner) | (; m = (; x))
         t = as(post)
         @test logdensity(post, transform(t, randn(3))) isa Float64
     end
@@ -55,7 +55,7 @@ include("examples-list.jl")
         m1 = @model begin
             x1 ~ Tilde.Normal(0.0, 1.0)
             x2 ~ Dists.LogNormal(0.0, 1.0)
-            return x1^2/x2
+            return x1^2 / x2
         end
 
         m2 = @model m begin
@@ -63,31 +63,31 @@ include("examples-list.jl")
             y ~ Tilde.Normal(μ, 1.0)
         end
 
-        mm = m2(m=m1())
-        
-        @test as(mm|(y=1.0,)) isa TransformVariables.TransformTuple
-        @test basemeasure(mm | (y=1.0,)) isa ProductMeasure
+        mm = m2(m = m1())
+
+        @test as(mm | (y = 1.0,)) isa TransformVariables.TransformTuple
+        @test basemeasure(mm | (y = 1.0,)) isa ProductMeasure
         @test testvalue(mm) isa NamedTuple
     end
 
     @testset "https://github.com/cscherrer/Tilde.jl/issues/258#issuecomment-819035325" begin
         m1 = @model begin
             x1 ~ Tilde.Normal(0.0, 1.0)
-            x2 ~ Dists.MvNormal(fill(x1,2), ones(2))
+            x2 ~ Dists.MvNormal(fill(x1, 2), ones(2))
             return x2
         end
-        
+
         m2 = @model m begin
             μ ~ m
-            y ~ For(μ) do x 
+            y ~ For(μ) do x
                 Tilde.Normal(x, 1.0)
             end
         end
-        
-        mm = m2(m=m1())
 
-        @test as(mm|(;y=1.0,)) isa TransformVariables.TransformTuple
-        @test basemeasure(mm | (y=1.0,)) isa ProductMeasure
+        mm = m2(m = m1())
+
+        @test as(mm | (; y = 1.0)) isa TransformVariables.TransformTuple
+        @test basemeasure(mm | (y = 1.0,)) isa ProductMeasure
         @test testvalue(mm) isa NamedTuple
     end
 
@@ -95,14 +95,16 @@ include("examples-list.jl")
         # https://github.com/cscherrer/Tilde.jl/issues/253
 
         m = @model begin
-            a ~ For(3) do x Normal(μ=x) end
-            x ~ Normal(μ=sum(a))
+            a ~ For(3) do x
+                Normal(μ = x)
+            end
+            x ~ Normal(μ = sum(a))
         end
 
         @test_broken let t = as(m2() | (; m = (; x = rand(3))))
             logdensity(m2() | (; m = (; x = rand(3))), t(randn(3))) isa Float64
         end
-        
+
         @test digraph(m).N == Dict(:a => Set([:x]), :x => Set())
     end
 

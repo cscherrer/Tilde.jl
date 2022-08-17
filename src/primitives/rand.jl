@@ -1,20 +1,18 @@
 using Random: GLOBAL_RNG
 using TupleVectors: chainvec
 
-struct RandConfig{T_rng, RNG} <: AbstractConfig
+struct RandConfig{T_rng,RNG} <: AbstractConfig
     rng::RNG
 
-    RandConfig(::Type{T_rng}, rng::RNG) where {T_rng, RNG<:AbstractRNG} = new{T_rng,RNG}(rng)
+    RandConfig(::Type{T_rng}, rng::RNG) where {T_rng,RNG<:AbstractRNG} = new{T_rng,RNG}(rng)
 end
 
 RandConfig(rng) = RandConfig(Float64, rng)
 RandConfig() = RandConfig(Float64, Random.GLOBAL_RNG)
 
-
 @inline function retfun(cfg::RandConfig, r, ctx)
     ctx
 end
-
 
 export rand
 EmptyNTtype = NamedTuple{(),Tuple{}} where {T<:Tuple}
@@ -36,11 +34,7 @@ Also note that a model closure is considered to be a measure on its _latent
 space_. That is, any return value in the model is ignored by `rand`. Use
 `predict` if you want the return value instead of a point in the latent space.
 """
-@inline function Base.rand(
-    rng::AbstractRNG,
-    ::Type{T_rng},
-    mc::ModelClosure
-) where {T_rng}
+@inline function Base.rand(rng::AbstractRNG, ::Type{T_rng}, mc::ModelClosure) where {T_rng}
     cfg = RandConfig(T_rng, rng)
     pars = NamedTuple()
     ctx = NamedTuple()
@@ -51,12 +45,12 @@ end
 # tilde
 
 @inline function tilde(
-    cfg::RandConfig{T_rng, RNG},
+    cfg::RandConfig{T_rng,RNG},
     z_obs::Unobserved{Z},
     lens,
     d,
     ctx,
-) where {Z,T_rng, RNG}
+) where {Z,T_rng,RNG}
     rng = cfg.rng
     z = value(z_obs)
     zj = rand(rng, T_rng, d)
@@ -65,7 +59,6 @@ end
     xj = predict(rng, d, zj)
     (xj, ctx′)
 end
-
 
 ###############################################################################
 # Dispatch helpers
@@ -97,21 +90,13 @@ end
 ###############################################################################
 # Specifying an Integer argument creates a TupleVector
 
-
-
 @inline function Base.rand(m::ModelClosure, N::Integer; kwargs...)
     rand(GLOBAL_RNG, Float64, m, N; kwargs...)
 end
 
-@inline function Base.rand(
-    rng::AbstractRNG,
-    mc::ModelClosure,
-    N::Integer,
-    kwargs...,
-)
+@inline function Base.rand(rng::AbstractRNG, mc::ModelClosure, N::Integer, kwargs...)
     rand(rng, Float64, mc, N; kwargs...)
 end
-
 
 @inline function Base.rand(
     ::Type{T_rng},
@@ -156,40 +141,25 @@ end
 ###############################################################################
 # Cases that throw errors
 
-function Base.rand(
-    ::AbstractRNG,
-    ::Type,
-    m::AbstractModel,
-    args...;
-    kwargs...
-)
+function Base.rand(::AbstractRNG, ::Type, m::AbstractModel, args...; kwargs...)
     @error "`rand` called on Model without arugments. Try `m(args)` or `m()` if the model has no arguments"
 end
 
-function Base.rand(
-    ::AbstractRNG,
-    ::Type,
-    m::ModelPosterior,
-    args...;
-    kwargs...
-)
+function Base.rand(::AbstractRNG, ::Type, m::ModelPosterior, args...; kwargs...)
     @error "`rand` called on ModelPosterior. `rand` does not allow conditioning; try `predict`"
 end
 
 ###############################################################################
 # Internal method allowing `ModelPosterior` 
 
-@inline function _rand(
-    rng::AbstractRNG,
-    ::Type{T_rng},
-    d) where {T_rng}
+@inline function _rand(rng::AbstractRNG, ::Type{T_rng}, d) where {T_rng}
     return rand(rng, T_rng, d)
 end
 
 @inline function _rand(
     rng::AbstractRNG,
     ::Type{T_rng},
-    mc::AbstractConditionalModel
+    mc::AbstractConditionalModel,
 ) where {T_rng}
     cfg = RandConfig(T_rng, rng)
     pars = NamedTuple()
@@ -197,14 +167,13 @@ end
     runmodel(cfg, mc, pars, ctx)
 end
 
-
 @inline function tilde(
-    cfg::RandConfig{T_rng, RNG},
+    cfg::RandConfig{T_rng,RNG},
     z_obs::Observed{Z},
     lens,
     d,
     ctx,
-) where {Z,T_rng, RNG}
+) where {Z,T_rng,RNG}
     rng = cfg.rng
     r = _rand(rng, T_rng, d)
     z = value(z_obs)
