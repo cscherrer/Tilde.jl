@@ -70,7 +70,7 @@ function make_body(M, ast::Expr, argsT, obsT, parsT)
             end
 
             :(return $r) => quote
-                return Tilde.retfun(_cfg, $r, _ctx)
+                return $retfun(_cfg, $r, _ctx)
                 # return Tilde.retfun(_cfg, NamedTuple{$paramnames}($paramvals) => $r, _ctx)
             end
 
@@ -128,8 +128,8 @@ end
         # _vars = KnownVars(_args, _obs, _pars)
         $body
         # If body doesn't have a return, default to `return ctx`
-        _params = NamedTuple{$paramnames}($paramvals)
-        return Tilde.retfun(_cfg, _params, _ctx)
+        _params = $NamedTuple{$paramnames}($paramvals)
+        return $retfun(_cfg, _params, _ctx)
     end)
 
     q = from_type(_get_gg_func_body(mk_function(M, q))) |> MacroTools.flatten

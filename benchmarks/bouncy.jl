@@ -14,56 +14,76 @@ using ForwardDiff
 using ForwardDiff: Dual
 using Pathfinder
 using Pathfinder.PDMats
+using MCMCChains
+using TupleVectors: chainvec
+using Tilde.MeasureTheory: transform
 
 Random.seed!(1)
 
-# read data
-function readlrdata()
-    fname = joinpath("lr.data")
-    z = readdlm(fname)
-    A = z[:, 1:end-1]
-    A = [ones(size(A, 1)) A]
-    y = z[:, end] .- 1
-    return A, y
-end
-A, y = readlrdata();
-At = collect(A');
-
-model_lr = @model (At, y, σ) begin
-    d, n = size(At)
-    θ ~ Normal(σ = σ)^d
-    for j in 1:n
-        logitp = dot(view(At, :, j), θ)
-        y[j] ~ Bernoulli(logitp = logitp)
-    end
-end
-σ = 100.0
-
-function make_grads(model_lr, At, y, σ)
-    post = model_lr(At, y, σ) | (; y)
+function make_grads(post)
     as_post = as(post)
-    obj(θ) = -Tilde.unsafe_logdensityof(post, transform(as_post, θ))
+    d = TV.dimension(as_post)
+    tr(θ) = transform(as_post, θ)
+    obj(θ) = -Tilde.unsafe_logdensityof(post, tr(θ))
     ℓ(θ) = -obj(θ)
-    @inline function dneglogp(t, x, v) # two directional derivatives
+    @inline function dneglogp(t, x, v, args...) # two directional derivatives
         f(t) = obj(x + t * v)
         u = ForwardDiff.derivative(f, Dual{:hSrkahPmmC}(0.0, 1.0))
         u.value, u.partials[]
     end
 
-    gconfig = ForwardDiff.GradientConfig(obj, rand(25), ForwardDiff.Chunk{25}())
-    function ∇neglogp!(y, t, x)
+    gconfig = ForwardDiff.GradientConfig(obj, rand(d), ForwardDiff.Chunk{d}())
+    function ∇neglogp!(y, t, x, args...)
         ForwardDiff.gradient!(y, obj, x, gconfig)
-        return
+        y
     end
-    post, ℓ, dneglogp, ∇neglogp!
+    ℓ, dneglogp, ∇neglogp!
 end
 
-post, ℓ, dneglogp, ∇neglogp! = make_grads(model_lr, At, y, σ)
-# Try things out
-dneglogp(2.4, randn(25), randn(25));
-∇neglogp!(randn(25), 2.1, randn(25));
+# ↑ general purpose
+############################################################
+# ↓ problem-specific
 
-d = 25 # number of parameters 
+# read data
+function readlrdata()
+    fname = joinpath("lr.data")
+    z = readdlm(fname)
+    A = z[:, 1:(end-1)]
+    A = [ones(size(A, 1)) A]
+    y = z[:, end] .- 1
+    return A, y
+end
+
+model_lr = @model (At, y, σ) begin
+    d, n = size(At)
+    θ ~ Normal(σ = σ)^d
+    for j in 1:n
+        logitp = view(At, :, j)' * θ
+        y[j] ~ Bernoulli(logitp = logitp)
+    end
+end
+
+# Define model arguments
+A, y = readlrdata();
+At = collect(A');
+σ = 100.0
+
+# Represent the posterior
+post = model_lr(At, y, σ) | (; y)
+
+d = TV.dimension(as(post))
+
+
+ℓ, dneglogp, ∇neglogp! = make_grads(post)
+
+# Make sure gradients are working
+let
+    @show dneglogp(2.4, randn(d), randn(d))
+    y = Vector{Float64}(undef, d)
+    @show ∇neglogp!(y, 2.1, randn(d))
+    nothing
+end
+
 t0 = 0.0;
 x0 = zeros(d); # starting point sampler
 # estimated posterior mean (n=100000, 797s)
@@ -129,8 +149,7 @@ sampler = ZZB.NotFactSampler(
     ),
 );
 
-using TupleVectors: chainvec
-using Tilde.MeasureTheory: transform
+# @time first(Iterators.drop(tvs,1000))
 
 function collect_sampler(t, sampler, n; progress = true, progress_stops = 20)
     if progress
@@ -166,7 +185,6 @@ elapsed_time = @elapsed @time begin
     bps_samples, info = collect_sampler(as(post), sampler, n; progress = false)
 end
 
-using MCMCChains
 bps_chain = MCMCChains.Chains(bps_samples.θ);
 bps_chain = setinfo(bps_chain, (; start_time = 0.0, stop_time = elapsed_time));
 
@@ -185,6 +203,7 @@ Tilde.sample(
     1,
     1,
 );
+
 hmc_time = @elapsed @time (
     hmc_samples = Tilde.sample(
         post,
@@ -196,6 +215,7 @@ hmc_time = @elapsed @time (
         1,
     )
 );
+
 hmc_chain = MCMCChains.Chains(hmc_samples.θ);
 μ̂2 = round.(mean(hmc_chain).nt[:mean], sigdigits = 4);
 println("μ̂ (HMC) = ", μ̂2)
@@ -214,3 +234,36 @@ plt_bounds = collect(extrema(ess_hmc));
 lineplot!(plt, plt_bounds, plt_bounds);
 plt
 @info "For each coordinate, a point (x,y) shows the effective sample size per second for BPS (x) and HMC (y) . In blue is the diagonal x=y"
+
+
+
+
+
+
+
+
+
+
+function prior_sampler(post)
+    as_post = as(post)
+    n = 1
+    function init_sampler(rng, x)
+        n += 1
+        @info "Initializing, n = $n"
+        θ = merge(rand(rng, post.closure), observations(post))
+        TV.inverse!(x, as_post, θ)
+    end
+end
+
+init_sampler = prior_sampler(post)
+using Random
+rng = Random.GLOBAL_RNG
+init_sampler(rng, randn(25))
+
+logp(x) = logdensityof(post, transform(as_post, x))
+
+pf = pathfinder(logp, dim=25, init_sampler=init_sampler, ndraws_elbo=1000)
+mpf = multipathfinder(logp, 1000, nruns=20, dim=25, init_sampler=init_sampler, ndraws_elbo=1000)
+
+
+logp(rng, x) = 
